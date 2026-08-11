@@ -1,99 +1,37 @@
-import React, { useState } from "react";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-import "./App.css";
-
-// Import Pages
-import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/profile";
-import EditProfile from "./pages/editprofile";
-import Announcements from "./pages/announcement";
-import Timetable from "./pages/Timetable";
+import Dashboard from "./pages/admin/Dashboard";
+import StudentManagement from "./pages/admin/StudentManagement";
+import FacultyManagement from "./pages/admin/FacultyManagement";
+import CertificateManagement from "./pages/admin/CertificateManagement";
+import NotificationManagement from "./pages/admin/NotificationManagement";
+import Settings from "./pages/admin/Settings";
+import Profile from "./pages/admin/Profile";
 
 function App() {
-
-  // Student Data
-  const [student, setStudent] = useState({
-    name: "Neharika Kandipati",
-    rollNo: "22CSE001",
-    department: "Computer Science and Engineering",
-    year: "3rd Year",
-    semester: "Semester 5",
-    email: "student@campusone.com",
-    phone: "9876543210",
-    gender: "Female",
-    dob: "2005-05-12",
-    bloodGroup: "O+",
-    cgpa: "9.12",
-    attendance: "92%",
-    address: "Hyderabad, Telangana",
-    profileImage: "https://i.pravatar.cc/200"
-  });
-
   return (
     <BrowserRouter>
-
       <Routes>
 
-        {/* Default Route */}
-        <Route
-          path="/"
-          element={<Navigate to="/dashboard" replace />}
-        />
+        {/* Redirect to Dashboard */}
+        <Route path="/" element={<Navigate to="/admin/dashboard" />} />
 
-        {/* Dashboard */}
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+        {/* Admin Routes */}
+         <Route path="/admin/dashboard" element={<Dashboard />} />
 
-        {/* Profile */}
-        <Route
-          path="/profile"
-          element={
-            <Profile
-              student={student}
-              setStudent={setStudent}
-            />
-          }
-        />
+         <Route path="/admin/students" element={<StudentManagement />} /> 
 
-        {/* Edit Profile */}
-        <Route
-          path="/edit-profile"
-          element={
-            <EditProfile
-              student={student}
-              setStudent={setStudent}
-            />
-          }
-        />
+         <Route path="/admin/faculty" element={<FacultyManagement />} /> 
 
-        {/* Announcements */}
-        <Route
-          path="/announcements"
-          element={<Announcements />}
-        />
+         <Route path="/admin/certificates" element={<CertificateManagement />} /> 
 
-        {/* Timetable */}
-        <Route
-          path="/timetable"
-          element={<Timetable />}
-        />
+         <Route path="/admin/notifications" element={<NotificationManagement />} /> 
 
-        {/* Invalid Route */}
-        <Route
-          path="*"
-          element={<Navigate to="/dashboard" replace />}
-        />
+         <Route path="/admin/settings" element={<Settings />} /> 
+
+         <Route path="/admin/profile" element={<Profile />} /> 
 
       </Routes>
-
     </BrowserRouter>
   );
 }
