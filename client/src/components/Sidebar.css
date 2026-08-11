@@ -1,0 +1,18 @@
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  text-decoration: none;
+  width: 100%;
+}
+
+.nav-link.active {
+  color: #60a5fa;
+  font-weight: bold;
+}
+
+.sidebar li:hover {
+  background: #374151;
+  border-radius: 8px;
+}
