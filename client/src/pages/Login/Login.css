@@ -1,0 +1,983 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.login-page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  overflow: hidden;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+
+/* =====================================================
+   LEFT PANEL
+===================================================== */
+
+.left-panel {
+  width: 45%;
+  height: 100vh;
+  padding: 42px 55px 25px;
+  position: relative;
+  overflow: hidden;
+
+  background: linear-gradient(
+    145deg,
+    #f2dcff 0%,
+    #e6e2ff 52%,
+    #dff2ff 100%
+  );
+
+  color: #1d2945;
+}
+
+
+/* Background circles */
+
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(120, 90, 230, 0.10);
+  pointer-events: none;
+}
+
+.circle-one {
+  width: 210px;
+  height: 210px;
+  top: -95px;
+  right: -80px;
+}
+
+.circle-two {
+  width: 150px;
+  height: 150px;
+  bottom: -75px;
+  left: -75px;
+}
+
+
+/* =====================================================
+   BRAND
+===================================================== */
+
+/* ================= BRAND ================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 3;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+
+  border-radius: 15px;
+
+  display: grid;
+  place-items: center;
+
+  position: relative;
+
+  background: linear-gradient(
+    135deg,
+    #7043e8,
+    #9369f2
+  );
+
+  color: white;
+}
+
+.logo b {
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.logo svg {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+
+  font-size: 17px;
+  color: #5530bd;
+}
+
+/* CampusOne AI + subtitle */
+
+.brand > div:last-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 900;
+  color: #182542;
+}
+
+.brand p {
+  margin: 4px 0 0;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 700;
+  color: #68738b;
+}
+
+
+
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.hero {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 520px;
+
+  margin-top: 55px;
+}
+.hero h2 {
+  color: #1b2a4c;
+  font-size: clamp(38px, 3.6vw, 52px);
+  line-height: 1.08;
+  font-weight: 900;
+}
+
+.hero h2 span {
+  color: #7650e8;
+  font-weight: 900;
+}
+
+
+.hero p {
+  width: 90%;
+  max-width: 470px;
+
+  margin-top: 20px;
+
+  color: #596681;
+
+  font-size: 13px;
+  line-height: 1.75;
+
+  font-weight: 600;
+}
+
+/* =====================================================
+   CAMPUS ILLUSTRATION
+===================================================== */
+
+.campus {
+  display: none;
+}
+
+
+/* =====================================================
+   FEATURES
+===================================================== */
+
+.features {
+  position: relative;
+
+  margin-top: 25px;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 12px;
+
+  z-index: 3;
+}
+
+.feature {
+  min-height: 82px;
+
+  padding: 12px 8px;
+
+  border-radius: 14px;
+
+  text-align: center;
+
+  background: rgba(255, 255, 255, 0.58);
+
+  border: 1px solid rgba(255, 255, 255, 0.7);
+
+  box-shadow:
+    0 5px 18px rgba(90, 80, 160, 0.04);
+}
+
+.feature-icon {
+  width: 32px;
+  height: 32px;
+
+  margin: 0 auto 7px;
+
+  border-radius: 9px;
+
+  display: grid;
+  place-items: center;
+
+  background: #eee9ff;
+
+  color: #704be5;
+
+  font-size: 13px;
+}
+
+
+.feature b {
+  display: block;
+  color: #34405d;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.feature small {
+  display: block;
+  margin-top: 3px;
+  color: #8791a6;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+
+
+
+/* Quote */
+
+.quote {
+  position: absolute;
+
+  bottom: 90px;
+  left: 0;
+  right: 0;
+
+  text-align: center;
+
+  color: #07080c;
+
+  font-size: 15px;
+
+  z-index: 3;
+}
+
+
+/* =====================================================
+   RIGHT PANEL
+===================================================== */
+
+/* =====================================================
+   RIGHT PANEL
+===================================================== */
+
+.right-panel {
+  width: 55%;
+  height: 100vh;
+
+  padding: 35px 7%;
+
+  background: #ffffff;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  overflow-y: auto;
+}
+
+
+/* =====================================================
+   FORM CONTAINER
+===================================================== */
+
+.form-container {
+  width: 100%;
+  max-width: 620px;
+
+  margin: 0 auto;
+}
+
+
+/* =====================================================
+   HEADING
+===================================================== */
+
+.heading {
+  width: 100%;
+}
+
+.heading h2 {
+  margin: 0;
+
+  color: #182542;
+
+  font-size: 34px;
+  line-height: 1.2;
+
+  font-weight: 900;
+}
+
+.heading p {
+  margin-top: 7px;
+
+  color: #737e94;
+
+  font-size: 12px;
+  line-height: 1.5;
+
+  font-weight: 700;
+}
+
+
+/* =====================================================
+   ROLE SELECTOR
+===================================================== */
+
+.roles {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 3px;
+
+  padding: 3px;
+
+  margin: 23px 0 20px;
+
+  border-radius: 23px;
+
+  background: #f2f4f8;
+}
+
+.role {
+  height: 43px;
+
+  border: none;
+  border-radius: 21px;
+
+  background: transparent;
+
+  color: #68748c;
+
+  font-family: inherit;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.role:hover {
+  color: #2868ea;
+}
+
+.role.active {
+  color: #ffffff;
+
+  background: #2868ea;
+
+  font-weight: 900;
+
+  box-shadow:
+    0 7px 17px rgba(40, 104, 234, 0.25);
+}
+
+
+/* =====================================================
+   FORM LABELS
+===================================================== */
+
+form > label {
+  display: block;
+
+  margin: 13px 0 6px;
+
+  color: #28334e;
+
+  font-size: 11px;
+
+  font-weight: 900;
+}
+
+
+/* =====================================================
+   INPUT BOX
+===================================================== */
+
+.input-box {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  border: 1px solid #dce1eb;
+
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  transition: 0.2s ease;
+}
+
+.input-box:focus-within {
+  border-color: #7350e7;
+
+  box-shadow:
+    0 0 0 3px rgba(115, 80, 231, 0.08);
+}
+
+.input-box > svg {
+  flex-shrink: 0;
+
+  color: #8993a8;
+
+  font-size: 13px;
+}
+
+.input-box input {
+  flex: 1;
+
+  width: 100%;
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+
+  color: #26334f;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+.input-box input::placeholder {
+  color: #9aa5b8;
+
+  font-weight: 400;
+}
+
+.eye {
+  border: none;
+
+  background: transparent;
+
+  color: #8791a5;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+}
+
+
+/* =====================================================
+   OPTIONS
+===================================================== */
+
+.options {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-top: 9px;
+
+  font-size: 10px;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+
+  gap: 5px;
+
+  color: #727d94;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+.remember input {
+  width: 12px;
+  height: 12px;
+
+  accent-color: #286bea;
+
+  cursor: pointer;
+}
+
+.forgot {
+  border: none;
+
+  background: transparent;
+
+  color: #704be2;
+
+  font-family: inherit;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+}
+
+
+/* =====================================================
+   SIGN IN BUTTON
+===================================================== */
+
+.signin {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 17px;
+
+  border: none;
+
+  border-radius: 11px;
+
+  background: linear-gradient(
+    135deg,
+    #286bea,
+    #397ff0
+  );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 12px;
+
+  font-weight: 900;
+
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  box-shadow:
+    0 9px 20px rgba(40, 107, 234, 0.18);
+
+  transition: 0.2s ease;
+}
+
+.signin:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 12px 24px rgba(40, 107, 234, 0.25);
+}
+
+
+/* =====================================================
+   DEMO CREDENTIALS
+===================================================== */
+
+.demo {
+  width: 100%;
+
+  margin-top: 17px;
+
+  border: 1px solid #edf0f4;
+
+  border-radius: 11px;
+
+  overflow: hidden;
+
+  background: #ffffff;
+}
+
+
+/* Demo heading */
+
+.demo-title {
+  min-height: 42px;
+
+  padding: 8px 11px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  background: #fbfaff;
+
+  color: #7650e5;
+}
+
+.demo-title b {
+  display: block;
+
+  color: #3c4762;
+
+  font-size: 10px;
+
+  font-weight: 900;
+}
+
+.demo-title small {
+  display: block;
+
+  margin-top: 1px;
+
+  color: #929bad;
+
+  font-size: 8px;
+
+  font-weight: 600;
+}
+
+
+/* Demo rows */
+
+.demo-row {
+  min-height: 42px;
+
+  padding: 5px 10px;
+
+  border-top: 1px solid #f0f1f5;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.demo-user {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+.demo-icon {
+  width: 28px;
+  height: 28px;
+
+  flex-shrink: 0;
+
+  border-radius: 7px;
+
+  display: grid;
+  place-items: center;
+
+  background: #eee9ff;
+
+  color: #7650e8;
+
+  font-size: 10px;
+}
+
+.demo-user b {
+  display: block;
+
+  color: #3b465f;
+
+  font-size: 9px;
+
+  font-weight: 900;
+}
+
+.demo-user small {
+  display: block;
+
+  margin-top: 1px;
+
+  color: #9ba4b5;
+
+  font-size: 8px;
+
+  font-weight: 600;
+}
+
+.demo-row button {
+  padding: 5px 13px;
+
+  border: 1px solid #e0daf7;
+
+  border-radius: 6px;
+
+  background: #ffffff;
+
+  color: #704cdf;
+
+  font-family: inherit;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+.demo-row button:hover {
+  background: #f6f2ff;
+
+  border-color: #cfc4f2;
+}
+
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+footer {
+  width: 100%;
+
+  margin-top: 10px;
+
+  text-align: center;
+
+  color: #929aaa;
+
+  font-size: 9px;
+
+  font-weight: 600;
+}
+
+
+/* =====================================================
+   RIGHT SIDE RESPONSIVE
+===================================================== */
+
+@media (max-width: 1000px) {
+
+  .right-panel {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+
+  .heading h2 {
+    font-size: 30px;
+  }
+}
+
+
+@media (max-width: 750px) {
+
+  .right-panel {
+    width: 100%;
+
+    min-height: 100vh;
+
+    height: auto;
+
+    padding: 40px 25px;
+  }
+
+  .form-container {
+    max-width: 100%;
+  }
+
+  .heading h2 {
+    font-size: 28px;
+  }
+}
+
+/* =====================================================
+   FORGOT PASSWORD
+===================================================== */
+
+.forgot-page {
+  width: 100%;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: linear-gradient(
+    145deg,
+    #f2dcff,
+    #e6e2ff,
+    #dff2ff
+  );
+
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.forgot-card {
+  width: 420px;
+
+  padding: 35px;
+
+  background: white;
+
+  border-radius: 20px;
+
+  box-shadow:
+    0 20px 50px rgba(70, 60, 130, 0.12);
+}
+
+.back-button {
+  border: none;
+  background: transparent;
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #704be2;
+
+  font-family: inherit;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.forgot-icon {
+  width: 55px;
+  height: 55px;
+
+  margin: 30px auto 15px;
+
+  border-radius: 15px;
+
+  display: grid;
+  place-items: center;
+
+  background: #eee9ff;
+
+  color: #7650e8;
+
+  font-size: 20px;
+}
+
+.forgot-card h2 {
+  text-align: center;
+
+  color: #182542;
+
+  font-size: 28px;
+
+  font-weight: 900;
+}
+
+.forgot-card > p {
+  margin: 10px auto 25px;
+
+  text-align: center;
+
+  color: #737e94;
+
+  font-size: 11px;
+
+  line-height: 1.6;
+
+  font-weight: 600;
+}
+
+.forgot-card label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #28334e;
+
+  font-size: 11px;
+
+  font-weight: 900;
+}
+
+.forgot-input {
+  width: 100%;
+  height: 48px;
+
+  padding: 0 13px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 9px;
+
+  border: 1px solid #dce1eb;
+
+  border-radius: 10px;
+}
+
+.forgot-input svg {
+  color: #8993a8;
+}
+
+.forgot-input input {
+  flex: 1;
+
+  height: 100%;
+
+  border: none;
+  outline: none;
+
+  font-family: inherit;
+
+  font-size: 12px;
+}
+
+.reset-button {
+  width: 100%;
+  height: 48px;
+
+  margin-top: 17px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #286bea;
+
+  color: white;
+
+  font-family: inherit;
+
+  font-size: 11px;
+
+  font-weight: 900;
+
+  cursor: pointer;
+}
