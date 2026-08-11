@@ -15,6 +15,22 @@ function App() {
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/profile" element={<StudentProfile />} />
     </Routes>
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import DashboardLayout from "./layouts/DashboardLayout";
+import FacultyDashboard from "./pages/FacultyDashboard";
+import Attendance from "./pages/Attendance";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<DashboardLayout />}>
+          <Route index element={<FacultyDashboard />} />
+          <Route path="attendance" element={<Attendance />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
