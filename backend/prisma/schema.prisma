@@ -1,0 +1,403 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  student
+  faculty
+  admin
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
+enum ClassType {
+  lecture
+  lab
+}
+
+enum AttendanceStatus {
+  present
+  absent
+}
+
+enum ResultType {
+  sem
+  mid
+}
+
+enum OutpassType {
+  urgent
+  medical
+  event
+  personal
+  other
+}
+
+enum OutpassStatus {
+  pending
+  approved
+  rejected
+}
+
+enum CertificateStatus {
+  pending
+  approved
+  rejected
+}
+
+enum NotificationPriority {
+  normal
+  important
+  urgent
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  role      Role
+  name      String
+  photo     String?
+  status    UserStatus @default(active)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  student            Student?
+  faculty            Faculty?
+  admin              Admin?
+  sentNotifications  Notification[] @relation("NotificationSender")
+  targetedNotifs     Notification[] @relation("NotificationTarget")
+  passwordResets     PasswordReset[]
+
+  @@index([role, email])
+  @@map("users")
+}
+
+model Admin {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+model Department {
+  id      String    @id @default(uuid())
+  name    String    @unique
+  code    String    @unique
+  courses Course[]
+  faculty Faculty[]
+  students Student[]
+  subjects Subject[]
+
+  @@map("departments")
+}
+
+model Course {
+  id           String     @id @default(uuid())
+  name         String
+  code         String
+  departmentId String     @map("department_id")
+  department   Department @relation(fields: [departmentId], references: [id])
+  batches      Batch[]
+  students     Student[]
+
+  @@unique([code, departmentId])
+  @@map("courses")
+}
+
+model Batch {
+  id        String  @id @default(uuid())
+  name      String
+  yearLevel String  @map("year_level")
+  courseId  String  @map("course_id")
+  course    Course  @relation(fields: [courseId], references: [id])
+  classes   Class[]
+
+  @@index([yearLevel])
+  @@map("batches")
+}
+
+model Class {
+  id              String           @id @default(uuid())
+  section         String
+  batchId         String           @map("batch_id")
+  batch           Batch            @relation(fields: [batchId], references: [id])
+  students        Student[]
+  facultySubjects FacultySubject[]
+  timetable       Timetable[]
+  assignments     Assignment[]
+
+  @@unique([batchId, section])
+  @@map("classes")
+}
+
+model Subject {
+  id              String           @id @default(uuid())
+  name            String
+  code            String
+  departmentId    String           @map("department_id")
+  department      Department       @relation(fields: [departmentId], references: [id])
+  facultySubjects FacultySubject[]
+  attendance      Attendance[]
+  results         Result[]
+  timetable       Timetable[]
+  assignments     Assignment[]
+
+  @@unique([code, departmentId])
+  @@index([name])
+  @@map("subjects")
+}
+
+model Student {
+  id          String  @id @default(uuid())
+  userId      String  @unique @map("user_id")
+  studentId   String  @unique @map("student_id")
+  dormNo      String? @map("dorm_no")
+  year        Int
+  parentName  String? @map("parent_name")
+  mobile      String?
+  parentPhone String? @map("parent_phone")
+  section     String
+  courseName  String  @map("course")
+  deptCode    String  @map("dept")
+  cgpa        Float   @default(0)
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String     @map("department_id")
+  department   Department @relation(fields: [departmentId], references: [id])
+  courseId     String     @map("course_id")
+  course       Course     @relation(fields: [courseId], references: [id])
+  classId      String     @map("class_id")
+  class        Class      @relation(fields: [classId], references: [id])
+
+  attendance   Attendance[]
+  results      Result[]
+  cgpaRecords  SemesterCgpa[]
+  submissions  AssignmentSubmission[]
+  outpasses    Outpass[]
+  certificates Certificate[]
+
+  @@index([deptCode, section])
+  @@index([studentId])
+  @@map("students")
+}
+
+model Faculty {
+  id           String  @id @default(uuid())
+  userId       String  @unique @map("user_id")
+  facultyId    String  @unique @map("faculty_id")
+  designation  String
+  mobile       String?
+  subjectsText String  @default("") @map("subjects")
+  deptCode     String  @map("dept")
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String     @map("department_id")
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  facultySubjects FacultySubject[]
+  attendance      Attendance[]
+  timetable       Timetable[]
+  assignments     Assignment[]
+  outpasses       Outpass[]
+
+  @@index([facultyId])
+  @@map("faculty")
+}
+
+model FacultySubject {
+  id        String  @id @default(uuid())
+  facultyId String  @map("faculty_id")
+  subjectId String  @map("subject_id")
+  classId   String  @map("class_id")
+  faculty Faculty @relation(fields: [facultyId], references: [facultyId], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  class     Class   @relation(fields: [classId], references: [id])
+
+  @@unique([facultyId, subjectId, classId])
+  @@map("faculty_subjects")
+}
+
+model Attendance {
+  id        String           @id @default(uuid())
+  studentId String           @map("student_id")
+  subjectId String           @map("subject_id")
+  facultyId String           @map("faculty_id")
+  subject   String
+  classType ClassType        @map("class_type")
+  date      String
+  status    AttendanceStatus
+  student    Student  @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  subjectRel Subject  @relation(fields: [subjectId], references: [id])
+  faculty    Faculty  @relation(fields: [facultyId], references: [facultyId])
+
+  @@unique([studentId, subjectId, date, classType])
+  @@index([studentId, date])
+  @@index([facultyId, date])
+  @@map("attendance")
+}
+
+model Result {
+  id          String     @id @default(uuid())
+  studentId   String     @map("student_id")
+  subjectId   String     @map("subject_id")
+  yearLevel   String     @map("year_level")
+  semester    String
+  type        ResultType
+  subject     String
+  marks       Float
+  maxMarks    Float      @default(100) @map("max_marks")
+  grade       String
+  gradePoints Float?     @map("grade_points")
+  student    Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  subjectRel Subject @relation(fields: [subjectId], references: [id])
+
+  @@index([studentId, yearLevel, semester, type])
+  @@map("results")
+}
+
+model SemesterCgpa {
+  id        String  @id @default(uuid())
+  studentId String  @map("student_id")
+  yearLevel String  @map("year_level")
+  semester  String
+  gpa       Float
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@unique([studentId, yearLevel, semester])
+  @@map("semester_cgpa")
+}
+
+model Timetable {
+  id          String  @id @default(uuid())
+  classId     String? @map("class_id")
+  facultyId   String? @map("faculty_id")
+  subjectId   String? @map("subject_id")
+  roleOwner   String  @map("role_owner")
+  ownerId     String  @map("owner_id")
+  day         String
+  period      Int
+  subject     String
+  room        String
+  timeSlot    String  @map("time_slot")
+  facultyName String? @map("faculty_name")
+  classType   String? @map("class_type")
+  class       Class?  @relation(fields: [classId], references: [id])
+  faculty    Faculty? @relation(fields: [facultyId], references: [facultyId])
+  subjectRel  Subject? @relation(fields: [subjectId], references: [id])
+
+  @@index([roleOwner, ownerId, day])
+  @@map("timetable")
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  facultyId   String   @map("faculty_id")
+  classId     String?  @map("class_id")
+  subjectId   String?  @map("subject_id")
+  title       String
+  description String
+  subject     String
+  dueDate     String   @map("due_date")
+  fileUrl     String?  @map("file_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  faculty    Faculty @relation(fields: [facultyId], references: [facultyId])
+  class      Class?  @relation(fields: [classId], references: [id])
+  subjectRel  Subject? @relation(fields: [subjectId], references: [id])
+  submissions AssignmentSubmission[]
+
+  @@index([facultyId])
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String     @id @default(uuid())
+  assignmentId String     @map("assignment_id")
+  studentId    String     @map("student_id")
+  fileUrl      String?    @map("file_url")
+  submittedAt  DateTime?  @map("submitted_at")
+  status       String     @default("submitted")
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+  @@map("assignment_submissions")
+}
+
+model Notification {
+  id         String                 @id @default(uuid())
+  title      String
+  body       String
+  senderId   String?                @map("sender_id")
+  targetRole String                 @map("target_role")
+  targetId   String?                @map("target_id")
+  priority   NotificationPriority   @default(normal)
+  readBy     Json                   @default("[]") @map("read_by")
+  createdAt  DateTime               @default(now()) @map("created_at")
+  sender     User?                  @relation("NotificationSender", fields: [senderId], references: [id])
+  targetUser User?                  @relation("NotificationTarget", fields: [targetId], references: [id])
+
+  @@index([targetRole, targetId])
+  @@map("notifications")
+}
+
+model Outpass {
+  id          String        @id @default(uuid())
+  studentId   String        @map("student_id")
+  facultyId   String        @map("faculty_id")
+  reason      String
+  reasonType  OutpassType   @map("reason_type")
+  fromDate    String        @map("from_date")
+  toDate      String        @map("to_date")
+  destination String?
+  outTime     String?       @map("out_time")
+  returnTime  String?       @map("return_time")
+  extra       String?
+  status      OutpassStatus @default(pending)
+  qrCode      String?       @map("qr_code")
+  scannedAt   DateTime?     @map("scanned_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  reviewedAt  DateTime?     @map("reviewed_at")
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  faculty Faculty @relation(fields: [facultyId], references: [facultyId])
+
+  @@index([facultyId, status])
+  @@index([studentId])
+  @@map("outpasses")
+}
+
+model Certificate {
+  id         String            @id @default(uuid())
+  studentId  String            @map("student_id")
+  type       String
+  purpose    String
+  status     CertificateStatus @default(pending)
+  fileUrl    String?           @map("file_url")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  reviewedAt DateTime?         @map("reviewed_at")
+  student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+
+  @@index([status])
+  @@map("certificates")
+}
+
+model PasswordReset {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  email     String
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  used      Boolean   @default(false)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("password_resets")
+}
