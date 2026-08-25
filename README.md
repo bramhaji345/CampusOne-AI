@@ -17,8 +17,8 @@ React Frontend  →  Express API  →  Prisma  →  PostgreSQL
 ### 1. Clone and configure environment
 
 ```bash
-git clone https://github.com/bramhaji345/CampusOne-AI.git
-cd CampusOne-AI
+git clone https://github.com/bramhaji345/campus.git
+cd campus
 ```
 
 Copy the example env file and fill in **your** values. Never commit `.env`.
