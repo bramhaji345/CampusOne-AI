@@ -26,4 +26,6 @@ Depends on **06-Auth-Database** (login + Prisma). Reads marks/attendance written
 
 ## Local files (no secrets)
 
-Do not add `.env`, passwords, or `node_modules`. Use `backend/.env.example` as a template. Run the main CampusOne AI app from the repo root (`frontend/` + `backend/`).
+Do not add `.env`, passwords, or `node_modules`. Use `backend/.env.example` as a template.
+
+Root `frontend/` and `backend/` are merge targets and do not contain duplicate copies of these files. Work in this `01-AI/` folder, then copy into the root folders when combining with the other modules.
