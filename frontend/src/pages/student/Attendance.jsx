@@ -52,7 +52,7 @@ export default function StudentAttendance() {
               <XAxis dataKey="date" tick={{ fontSize: 10 }} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
               <Tooltip />
-              <Area type="monotone" dataKey="percentage" stroke="#3b6dff" fill="#3b6dff33" />
+              <Area type="monotone" dataKey="percentage" stroke="var(--chart-primary)" fill="var(--chart-primary-soft)" />
             </AreaChart>
           </ResponsiveContainer>
         ) : <EmptyState title="Trend appears after classes are marked" />}

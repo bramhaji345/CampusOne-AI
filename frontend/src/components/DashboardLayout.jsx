@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { Bell, HelpCircle, LogOut, Menu, Moon, Search, Sun, User, X } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, HelpCircle, LogOut, Menu, Moon, Search, Sun, User, X } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useConfirm } from '../context/ConfirmContext';
 import { EmptyState } from './Ui';
 import api from '../api';
+import { useRealtimeSync } from '../hooks/useRealtimeSync';
 
 export default function DashboardLayout({ links, title }) {
   const { user, logout } = useAuth();
@@ -14,11 +15,13 @@ export default function DashboardLayout({ links, title }) {
   const { confirm } = useConfirm();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [q, setQ] = useState('');
   const [hits, setHits] = useState([]);
   const searchRef = useRef(null);
+  const syncStatus = useRealtimeSync();
 
   const loadNotifs = () => api.get('/notifications').then((r) => setNotifs(r.data)).catch(() => {});
 
@@ -29,12 +32,35 @@ export default function DashboardLayout({ links, title }) {
   }, []);
 
   useEffect(() => {
+    const refreshNotifs = () => loadNotifs();
+    window.addEventListener('campus:data-changed', refreshNotifs);
+    window.addEventListener('campus:reconnected', refreshNotifs);
+    return () => {
+      window.removeEventListener('campus:data-changed', refreshNotifs);
+      window.removeEventListener('campus:reconnected', refreshNotifs);
+    };
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (user?.role) root.setAttribute('data-portal', user.role);
+    else root.removeAttribute('data-portal');
+    return () => root.removeAttribute('data-portal');
+  }, [user?.role]);
+
+  useEffect(() => {
     if (q.length < 2) { setHits([]); return; }
     const t = setTimeout(() => {
       api.get('/search', { params: { q } }).then((r) => setHits(r.data.results || [])).catch(() => {});
     }, 220);
     return () => clearTimeout(t);
   }, [q]);
+
+  useEffect(() => {
+    const onKeyDown = (event) => { if (event.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   const unread = notifs.filter((n) => !(n.read_by || []).includes(user?.id)).length;
 
@@ -44,10 +70,14 @@ export default function DashboardLayout({ links, title }) {
   };
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`} data-portal={user?.role || 'student'}>
+      {open && <button className="sidebar-scrim" type="button" aria-label="Close navigation" onClick={() => setOpen(false)} />}
       <aside className={`sidebar ${open ? 'open' : ''}`}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="sidebar-brand">
           <Logo size={36} />
+          <button className="icon-btn sidebar-collapse" onClick={() => setCollapsed((value) => !value)} type="button" aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}>
+            {collapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
+          </button>
           <button className="icon-btn mobile-menu-btn" onClick={() => setOpen(false)} type="button" aria-label="Close menu">
             <X size={18} />
           </button>
@@ -56,7 +86,7 @@ export default function DashboardLayout({ links, title }) {
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end} onClick={() => setOpen(false)}>
               {l.icon}
-              {l.label}
+              <span className="nav-label">{l.label}</span>
             </NavLink>
           ))}
         </nav>
@@ -73,7 +103,7 @@ export default function DashboardLayout({ links, title }) {
             </button>
             <div>
               <strong>{title}</strong>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Welcome, {user?.name}</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Welcome, {user?.name} <span className={`sync-status ${syncStatus}`} title={`Live updates ${syncStatus}`}>{syncStatus === 'connected' ? '• Live' : syncStatus === 'offline' ? '• Offline' : '• Reconnecting'}</span></div>
             </div>
           </div>
 

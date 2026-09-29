@@ -8,7 +8,7 @@ export default function FacultyMarks() {
   const { user } = useAuth();
   const { confirm } = useConfirm();
   const { toast } = useToast();
-  const subjects = (user?.subjects || 'Data Structures').split(',').map((s) => s.trim());
+  const subjects = (user?.subjects || '').split(',').map((s) => s.trim()).filter(Boolean);
   const [students, setStudents] = useState([]);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -21,11 +21,11 @@ export default function FacultyMarks() {
   });
 
   useEffect(() => {
-    api.get('/students/list', { params: { dept: user?.dept || 'CSE' } }).then((r) => {
+    api.get('/students/list', { params: { dept: user?.dept, subject: form.subject } }).then((r) => {
       setStudents(r.data);
       if (r.data[0]) setForm((f) => ({ ...f, student_id: r.data[0].student_id }));
     });
-  }, [user]);
+  }, [user, form.subject]);
 
   const save = async (e) => {
     e.preventDefault();

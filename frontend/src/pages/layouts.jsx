@@ -2,6 +2,7 @@ import {
   LayoutDashboard, BarChart3, ClipboardCheck, Calendar, FileText,
   QrCode, User, Settings, Bell, HelpCircle, Award, Users, GraduationCap,
   PenLine, ScanLine,
+  History,
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 
@@ -46,6 +47,7 @@ export const adminLinks = [
   { to: '/admin/faculty', label: 'Faculty', icon: <Users size={18} /> },
   { to: '/admin/certificates', label: 'Certificates', icon: <Award size={18} /> },
   { to: '/admin/scanner', label: 'QR Scanner', icon: <ScanLine size={18} /> },
+  { to: '/admin/audit', label: 'Audit history', icon: <History size={18} /> },
   { to: '/admin/notifications', label: 'Notifications', icon: <Bell size={18} /> },
   { to: '/admin/profile', label: 'Profile', icon: <User size={18} /> },
   { to: '/admin/settings', label: 'Settings', icon: <Settings size={18} /> },

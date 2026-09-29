@@ -1,8 +1,11 @@
+import { GraduationCap, Sparkles } from 'lucide-react';
+
 export default function Logo({ size = 40, withText = true }) {
   return (
     <div className="logo">
       <div className="logo-mark" style={{ width: size, height: size, borderRadius: Math.round(size * 0.28) }}>
-        <img src="/logo.jpg" alt="CampusOne AI" />
+        <GraduationCap size={Math.round(size * 0.54)} strokeWidth={2.2} aria-hidden="true" />
+        <Sparkles className="logo-spark" size={Math.round(size * 0.28)} strokeWidth={2.5} aria-hidden="true" />
       </div>
       {withText && (
         <div className="logo-text">

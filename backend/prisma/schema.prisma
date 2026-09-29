@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma-v2"
 }
 
 datasource db {
@@ -68,6 +69,8 @@ model User {
   photo     String?
   status    UserStatus @default(active)
   createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at")
+  version   Int        @default(1)
 
   student            Student?
   faculty            Faculty?
@@ -75,6 +78,7 @@ model User {
   sentNotifications  Notification[] @relation("NotificationSender")
   targetedNotifs     Notification[] @relation("NotificationTarget")
   passwordResets     PasswordReset[]
+  auditLogs          AuditLog[]
 
   @@index([role, email])
   @@map("users")
@@ -96,6 +100,9 @@ model Department {
   faculty Faculty[]
   students Student[]
   subjects Subject[]
+  branches Branch[]
+  confirmationStatus String @default("CONFIRMED") @map("confirmation_status")
+  sourceType String? @map("source_type")
 
   @@map("departments")
 }
@@ -108,6 +115,8 @@ model Course {
   department   Department @relation(fields: [departmentId], references: [id])
   batches      Batch[]
   students     Student[]
+  programId    String? @map("program_id")
+  program      AcademicProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
 
   @@unique([code, departmentId])
   @@map("courses")
@@ -145,7 +154,19 @@ model Subject {
   code            String
   departmentId    String           @map("department_id")
   department      Department       @relation(fields: [departmentId], references: [id])
+  entryLevel      String?          @map("entry_level")
+  semester        String?
+  category        String?
+  ltp             String?
+  credits         Float?
+  sourceDocument  String?          @map("source_document")
+  curriculumScope String?          @map("curriculum_scope")
+  sourceType      String?          @map("source_type")
+  confirmationStatus String @default("CONFIRMED") @map("confirmation_status")
   facultySubjects FacultySubject[]
+  courseRecords   StudentCourseRecord[]
+  courseAssignments FacultyCourseAssignment[]
+  offerings       SubjectOffering[]
   attendance      Attendance[]
   results         Result[]
   timetable       Timetable[]
@@ -169,6 +190,23 @@ model Student {
   courseName  String  @map("course")
   deptCode    String  @map("dept")
   cgpa        Float   @default(0)
+  active      Boolean  @default(true)
+  version     Int      @default(1)
+  sourceStatus String  @default("system-entered") @map("source_status")
+  sourceSheet  String? @map("source_sheet")
+  gender       String?
+  dateOfBirth  DateTime? @map("date_of_birth") @db.Date
+  collegeId    String?  @unique @map("college_id")
+  academicYear String?  @map("academic_year")
+  academicStatus String? @map("academic_status")
+  branchId     String?  @map("branch_id")
+  branch       Branch?  @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  rank         Int?
+  pucCgpa      Float?   @map("puc_cgpa")
+  academicBatchId String? @map("academic_batch_id")
+  academicBatch AcademicBatch? @relation(fields: [academicBatchId], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
 
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   departmentId String     @map("department_id")
@@ -184,6 +222,8 @@ model Student {
   submissions  AssignmentSubmission[]
   outpasses    Outpass[]
   certificates Certificate[]
+  courseRecords StudentCourseRecord[]
+  advisorMappings StudentAdvisor[]
 
   @@index([deptCode, section])
   @@index([studentId])
@@ -198,6 +238,21 @@ model Faculty {
   mobile       String?
   subjectsText String  @default("") @map("subjects")
   deptCode     String  @map("dept")
+  active       Boolean  @default(true)
+  version      Int      @default(1)
+  sourceStatus String   @default("system-entered") @map("source_status")
+  sourceSheet  String?  @map("source_sheet")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  employeeId   String?  @unique @map("employee_id")
+  gender       String?
+  qualification String?
+  specialization String?
+  experienceYears Float? @map("experience_years")
+  joiningDate  DateTime? @map("joining_date") @db.Date
+  employmentType String? @map("employment_type")
+  officeRoom   String? @map("office_room")
+  campus       String?
 
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   departmentId String     @map("department_id")
@@ -208,6 +263,9 @@ model Faculty {
   timetable       Timetable[]
   assignments     Assignment[]
   outpasses       Outpass[]
+  courseAssignments FacultyCourseAssignment[]
+  advisees         StudentAdvisor[]
+  leaves           FacultyLeave[]
 
   @@index([facultyId])
   @@map("faculty")
@@ -270,6 +328,14 @@ model SemesterCgpa {
   yearLevel String  @map("year_level")
   semester  String
   gpa       Float
+  academicYear String? @map("academic_year")
+  totalCredits Float? @map("total_credits")
+  earnedCredits Float? @map("earned_credits")
+  totalCreditPoints Float? @map("total_credit_points")
+  cumulativeCredits Float? @map("cumulative_credits")
+  cumulativeCreditPoints Float? @map("cumulative_credit_points")
+  academicStatus String? @map("academic_status")
+  sourceStatus String @default("system-entered") @map("source_status")
   student Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
 
   @@unique([studentId, yearLevel, semester])
@@ -400,4 +466,159 @@ model PasswordReset {
 
   @@index([token])
   @@map("password_resets")
+}
+
+model SubjectOffering {
+  id                 String   @id @default(uuid())
+  subjectId          String   @map("subject_id")
+  entryLevel         String   @map("entry_level")
+  semester           String
+  category           String
+  ltp                String?
+  credits            Float?
+  sourceDocument     String?  @map("source_document")
+  sourceType         String?  @map("source_type")
+  curriculumScope    String?  @map("curriculum_scope")
+  confirmationStatus String   @default("CONFIRMED") @map("confirmation_status")
+  sourceStatus       String   @default("workbook-source") @map("source_status")
+  subject            Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, entryLevel, semester, category])
+  @@index([entryLevel, semester])
+  @@map("subject_offerings")
+}
+
+model StudentCourseRecord {
+  id              String   @id @default(uuid())
+  studentId       String   @map("student_id")
+  subjectId       String   @map("subject_id")
+  semester        String
+  academicYear    String   @map("academic_year")
+  credits         Float?
+  marks           Float?
+  grade           String?
+  gradePoint      Float?   @map("grade_point")
+  creditPoints    Float?   @map("credit_points")
+  resultStatus    String?  @map("result_status")
+  curriculumScope String?  @map("curriculum_scope")
+  sourceStatus    String   @default("system-entered") @map("source_status")
+  student         Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  subject         Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, subjectId, semester, academicYear])
+  @@index([studentId, academicYear, semester])
+  @@map("student_course_records")
+}
+
+model FacultyCourseAssignment {
+  id             String   @id @default(uuid())
+  facultyId      String   @map("faculty_id")
+  subjectId      String   @map("subject_id")
+  academicYear   String   @map("academic_year")
+  semester       String
+  role           String?
+  status         String   @default("ACTIVE")
+  curriculumNote String?  @map("curriculum_note")
+  sourceStatus   String   @default("system-entered") @map("source_status")
+  faculty        Faculty @relation(fields: [facultyId], references: [facultyId], onDelete: Cascade)
+  subject        Subject @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@unique([facultyId, subjectId, academicYear, semester])
+  @@index([subjectId, academicYear, semester])
+  @@map("faculty_course_assignments")
+}
+
+model StudentAdvisor {
+  id           String  @id @default(uuid())
+  studentId    String  @map("student_id")
+  facultyId    String  @map("faculty_id")
+  academicYear String  @map("academic_year")
+  status       String  @default("ACTIVE")
+  sourceStatus String  @default("system-entered") @map("source_status")
+  student      Student @relation(fields: [studentId], references: [studentId], onDelete: Cascade)
+  faculty      Faculty @relation(fields: [facultyId], references: [facultyId], onDelete: Restrict)
+
+  @@unique([studentId, academicYear])
+  @@index([facultyId, academicYear])
+  @@map("student_advisors")
+}
+
+model FacultyLeave {
+  id             String    @id
+  facultyId      String    @map("faculty_id")
+  leaveType      String    @map("leave_type")
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  days           Float?
+  approvalStatus String    @map("approval_status")
+  academicYear   String?   @map("academic_year")
+  sourceStatus   String    @default("system-entered") @map("source_status")
+  faculty        Faculty   @relation(fields: [facultyId], references: [facultyId], onDelete: Cascade)
+
+  @@index([facultyId, startDate])
+  @@map("faculty_leaves")
+}
+
+model Branch {
+  id                 String   @id @default(uuid())
+  code               String   @unique
+  name               String
+  departmentId       String   @map("department_id")
+  confirmationStatus String   @default("CONFIRMED") @map("confirmation_status")
+  sourceType         String?  @map("source_type")
+  department         Department @relation(fields: [departmentId], references: [id])
+  students           Student[]
+
+  @@index([departmentId])
+  @@map("branches")
+}
+
+model AcademicProgram {
+  id            String  @id @default(uuid())
+  code          String  @unique
+  name          String
+  durationYears Int?    @map("duration_years")
+  totalCredits  Float?  @map("total_credits")
+  sourceType    String? @map("source_type")
+  courses       Course[]
+  @@map("academic_programs")
+}
+
+model AcademicBatch {
+  id           String  @id @default(uuid())
+  name         String  @unique
+  description  String?
+  sourceType   String? @map("source_type")
+  syntheticUse String? @map("synthetic_use")
+  startYear    Int?    @map("start_year")
+  endYear      Int?    @map("end_year")
+  students     Student[]
+  @@map("academic_batches")
+}
+
+model GradeScale {
+  id           String  @id @default(uuid())
+  grade        String  @unique
+  minimumMarks Float?  @map("minimum_marks")
+  maximumMarks Float?  @map("maximum_marks")
+  gradePoint   Float?  @map("grade_point")
+  resultStatus String? @map("result_status")
+  @@map("grade_scales")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  @map("user_id")
+  action      String
+  entity      String
+  entityId    String?  @map("entity_id")
+  oldValue    Json?    @map("old_value")
+  newValue    Json?    @map("new_value")
+  requestInfo String?  @map("request_info")
+  createdAt   DateTime @default(now()) @map("created_at")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId, createdAt])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
 }

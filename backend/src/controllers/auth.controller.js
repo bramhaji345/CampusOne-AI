@@ -7,15 +7,28 @@ import { getFacultyProfile, getStudentProfile, mapFaculty, mapStudent } from '..
 
 export async function login(req, res) {
   const { email, password, role: loginRole } = req.body;
-  if (!email || !password || !loginRole) {
-    return res.status(400).json({ error: 'Email, password and role required' });
+  const identifier = String(email || '').trim();
+  const role = String(loginRole || '').trim().toLowerCase();
+  if (!identifier || !password || !role) {
+    return res.status(400).json({ error: 'Campus email or ID, password and role required' });
   }
-  const user = await prisma.user.findFirst({
-    where: { email: email.toLowerCase(), role: loginRole, status: 'active' },
+  if (!['student', 'faculty', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Choose a valid portal: student, faculty, or admin' });
+  }
+  let user = await prisma.user.findFirst({
+    where: { email: identifier.toLowerCase(), role, status: 'active' },
     include: { student: true, faculty: true },
   });
+  if (!user && role === 'student') {
+    const student = await prisma.student.findUnique({ where: { studentId: identifier.toUpperCase() }, include: { user: true } });
+    if (student?.user.status === 'active' && student.user.role === role) user = { ...student.user, student, faculty: null };
+  }
+  if (!user && role === 'faculty') {
+    const faculty = await prisma.faculty.findUnique({ where: { facultyId: identifier.toUpperCase() }, include: { user: true } });
+    if (faculty?.user.status === 'active' && faculty.user.role === role) user = { ...faculty.user, faculty, student: null };
+  }
   if (!user) return res.status(401).json({ error: 'Invalid credentials for this portal' });
-  const ok = await bcrypt.compare(password, user.password);
+  const ok = await bcrypt.compare(String(password), user.password);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
   const token = signToken(user);

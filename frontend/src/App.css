@@ -1,3 +1,25 @@
+:root,
+[data-theme='light'] {
+  /* Mapped to the same Indigo Pulse + Coral Spark palette */
+  --accent: #5B3DF5;
+  --accent-bg: #ECE9FB;
+  --accent-border: #C9C0FA;
+  --border: #DCD8F0;
+  --text-h: #1A1330;
+  --social-bg: #F5F4FC;
+  --shadow: 0 8px 24px rgba(26, 19, 48, 0.10);
+}
+
+[data-theme='dark'] {
+  --accent: #7C5CFF;
+  --accent-bg: rgba(124, 92, 255, 0.14);
+  --accent-border: #4A3A8C;
+  --border: #352C5E;
+  --text-h: #F3F1FD;
+  --social-bg: #1C1638;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;

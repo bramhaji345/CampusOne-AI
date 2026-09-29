@@ -26,6 +26,7 @@ import AdminStudents from './pages/admin/Students';
 import AdminFaculty from './pages/admin/Faculty';
 import AdminCertificates from './pages/admin/Certificates';
 import AdminScanner from './pages/admin/Scanner';
+import AdminAuditLogs from './pages/admin/AuditLogs';
 import ProfilePage from './pages/shared/Profile';
 import SettingsPage from './pages/shared/Settings';
 import NotificationsPage from './pages/shared/Notifications';
@@ -77,6 +78,7 @@ export default function App() {
                   <Route path="faculty" element={<AdminFaculty />} />
                   <Route path="certificates" element={<AdminCertificates />} />
                   <Route path="scanner" element={<AdminScanner />} />
+                  <Route path="audit" element={<AdminAuditLogs />} />
                   <Route path="notifications" element={<NotificationsPage />} />
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="settings" element={<SettingsPage />} />

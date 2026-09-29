@@ -31,8 +31,20 @@ app.use('/api', apiRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
+  if (err.status) return res.status(err.status).json({ error: err.message });
+  if (err.name === 'MulterError') return res.status(400).json({ error: err.message });
+  if (/Upload an Excel/i.test(String(err.message || ''))) return res.status(400).json({ error: err.message });
   if (err.code === 'P2003') return res.status(400).json({ error: 'Invalid related record' });
   if (err.code === 'P2002') return res.status(409).json({ error: 'A record with this identifier already exists' });
+  if (
+    err.name === 'PrismaClientInitializationError'
+    || err.code === 'P1001'
+    || /Can't reach database server/i.test(String(err.message || ''))
+  ) {
+    return res.status(503).json({
+      error: 'Database is not running. In the backend folder run npm run db:local, then try login again.',
+    });
+  }
   res.status(500).json({ error: 'Something went wrong' });
 });
 

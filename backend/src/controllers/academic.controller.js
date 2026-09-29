@@ -52,11 +52,58 @@ function buildInsights(student, trend, subjects) {
 export async function listResults(req, res) {
   const student = await getStudentProfile(req.user.id);
   const { year_level, semester, type } = req.query;
+  const rawSemester = String(semester || '');
+  const normalizedSemester = String(semester || '').replace(/^Sem/i, '');
+  const semesterValues = [...new Set([rawSemester, normalizedSemester].filter(Boolean))];
+  if (type !== 'mid') {
+    const simulatedRows = await prisma.result.findMany({
+      where: {
+        studentId: student.student_id,
+        ...(year_level ? { yearLevel: year_level } : {}),
+        ...(semesterValues.length ? { semester: { in: semesterValues } } : {}),
+        type: 'sem', id: { startsWith: 'sim_' },
+      },
+      orderBy: { subject: 'asc' },
+    });
+    if (simulatedRows.length) return res.json(simulatedRows.map(serializeResult));
+    const courseRecords = await prisma.studentCourseRecord.findMany({
+      where: {
+        studentId: student.student_id,
+        ...(normalizedSemester ? { semester: normalizedSemester } : {}),
+      },
+      include: { subject: true },
+      orderBy: [{ semester: 'asc' }, { subject: { name: 'asc' } }],
+    });
+    if (courseRecords.length) {
+      const level = `E${student.year || 1}`;
+      if (year_level && year_level !== level) return res.json([]);
+      return res.json(courseRecords.map((row) => ({
+        id: row.id,
+        student_id: row.studentId,
+        subject_id: row.subjectId,
+        year_level: level,
+        semester: row.semester,
+        type: 'sem',
+        subject: row.subject.name,
+        course_code: row.subject.code,
+        marks: row.marks,
+        max_marks: null,
+        grade: row.grade,
+        grade_points: row.gradePoint,
+        credit_points: row.creditPoints,
+        credits: row.credits,
+        result_status: row.resultStatus,
+        curriculum_scope: row.curriculumScope,
+        source_status: row.sourceStatus,
+        academic_year: row.academicYear,
+      })));
+    }
+  }
   const rows = await prisma.result.findMany({
     where: {
       studentId: student.student_id,
       ...(year_level ? { yearLevel: year_level } : {}),
-      ...(semester ? { semester } : {}),
+      ...(semesterValues.length ? { semester: { in: semesterValues } } : {}),
       ...(type ? { type } : {}),
     },
     orderBy: { subject: 'asc' },
@@ -84,9 +131,10 @@ export async function aiResults(req, res) {
         gpa: Math.round(((r._avg.marks || 0) / (r._avg.maxMarks || 100)) * 10 * 100) / 100,
       }));
   }
+  const simulated = cgpaRows.some((row) => row.sourceStatus === 'SYNTHETIC RANDOM SIMULATION');
   const subjectGroups = await prisma.result.groupBy({
     by: ['subject'],
-    where: { studentId: student.student_id, type: 'sem' },
+    where: { studentId: student.student_id, type: 'sem', ...(simulated ? { id: { startsWith: 'sim_' } } : {}) },
     _avg: { marks: true, maxMarks: true },
   });
   const subjects = subjectGroups
@@ -158,16 +206,21 @@ export async function saveAttendance(req, res) {
     return res.status(400).json({ error: 'subject, class_type and records required' });
   }
   const faculty = await prisma.faculty.findUnique({ where: { userId: req.user.id } });
-  let subjectRow = await prisma.subject.findFirst({ where: { name: subject } });
-  if (!subjectRow) {
-    const dept = await prisma.department.findFirst({ where: { code: faculty.deptCode } });
-    subjectRow = await prisma.subject.create({
-      data: { name: subject, code: subject.slice(0, 6).toUpperCase(), departmentId: dept.id },
-    });
-  }
+  if (!faculty) return res.status(403).json({ error: 'Faculty profile is required' });
+  let subjectRow = await prisma.subject.findFirst({ where: { name: subject, departmentId: faculty.departmentId } });
+  if (!subjectRow) return res.status(404).json({ error: 'Subject is not in the campus catalog' });
+  const assignment = await prisma.facultyCourseAssignment.findFirst({
+    where: { facultyId: faculty.facultyId, subjectId: subjectRow.id, status: 'ACTIVE' },
+  });
+  const legacyAssignments = await prisma.facultySubject.findMany({
+    where: { facultyId: faculty.facultyId, subjectId: subjectRow.id },
+    select: { classId: true },
+  });
+  if (!assignment && !legacyAssignments.length) return res.status(403).json({ error: 'You are not assigned to this subject' });
+  const assignedClassIds = legacyAssignments.map((row) => row.classId);
   const validIds = new Set(
     (await prisma.student.findMany({
-      where: { studentId: { in: records.map((r) => r.student_id).filter(Boolean) } },
+      where: { studentId: { in: records.map((r) => r.student_id).filter(Boolean) }, classId: { in: assignedClassIds } },
       select: { studentId: true },
     })).map((s) => s.studentId)
   );
@@ -227,13 +280,20 @@ export async function saveMidMarks(req, res) {
   if (marks == null || Number(marks) < 0 || Number(marks) > Number(max_marks)) {
     return res.status(400).json({ error: `Marks must be between 0 and ${max_marks}` });
   }
-  let subjectRow = await prisma.subject.findFirst({ where: { name: subject } });
-  if (!subjectRow) {
-    const student = await prisma.student.findUnique({ where: { studentId: student_id } });
-    subjectRow = await prisma.subject.create({
-      data: { name: subject, code: subject.slice(0, 6).toUpperCase(), departmentId: student.departmentId },
-    });
-  }
+  const faculty = await prisma.faculty.findUnique({ where: { userId: req.user.id } });
+  if (!faculty) return res.status(403).json({ error: 'Faculty profile is required' });
+  const subjectRow = await prisma.subject.findFirst({ where: { name: subject, departmentId: faculty.departmentId } });
+  if (!subjectRow) return res.status(404).json({ error: 'Subject is not in the campus catalog' });
+  const assignment = await prisma.facultyCourseAssignment.findFirst({
+    where: { facultyId: faculty.facultyId, subjectId: subjectRow.id, status: 'ACTIVE' },
+  });
+  const legacyAssignments = await prisma.facultySubject.findMany({
+    where: { facultyId: faculty.facultyId, subjectId: subjectRow.id },
+    select: { classId: true },
+  });
+  if (!assignment && !legacyAssignments.length) return res.status(403).json({ error: 'You are not assigned to this subject' });
+  const targetStudent = await prisma.student.findUnique({ where: { studentId: student_id } });
+  if (!targetStudent || !legacyAssignments.some((row) => row.classId === targetStudent.classId)) return res.status(404).json({ error: 'Student is not in one of your assigned classes for this subject.' });
   const existing = await prisma.result.findFirst({
     where: { studentId: student_id, yearLevel: year_level, semester, type: 'mid', subject },
   });
@@ -258,15 +318,14 @@ export async function saveMidMarks(req, res) {
     });
   }
   await refreshStudentCgpa(student_id);
-  const student = await prisma.student.findUnique({ where: { studentId: student_id } });
-  if (student) {
+  if (targetStudent) {
     await prisma.notification.create({
       data: {
         title: 'Marks updated',
         body: `${subject} ${year_level} ${semester} mid marks have been published.`,
         senderId: req.user.id,
         targetRole: 'student',
-        targetId: student.userId,
+        targetId: targetStudent.userId,
         priority: 'important',
       },
     });

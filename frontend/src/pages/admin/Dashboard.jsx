@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Sparkles } from 'lucide-react';
@@ -10,12 +10,20 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     Promise.all([api.get('/admin/stats'), api.get('/admin/analytics')])
       .then(([s, a]) => { setStats(s.data); setAnalytics(a.data); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const refresh = () => load();
+    window.addEventListener('campus:data-changed', refresh);
+    window.addEventListener('campus:reconnected', refresh);
+    return () => { window.removeEventListener('campus:data-changed', refresh); window.removeEventListener('campus:reconnected', refresh); };
+  }, [load]);
 
   if (loading) return <div><div className="page-title"><h1>Administration</h1></div><SkeletonGrid /></div>;
 
@@ -50,7 +58,7 @@ export default function AdminDashboard() {
                 <XAxis dataKey="dept" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="c" name="Students" fill="#3b6dff" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="c" name="Students" fill="var(--chart-primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

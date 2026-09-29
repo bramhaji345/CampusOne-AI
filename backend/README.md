@@ -1,0 +1,4 @@
+
+## Simulated campus academic data
+
+After importing the synthetic workbook, run `cd backend && npm run seed:campus-data` to generate repeatable sample attendance, student and faculty timetables, assignments, subject-linked classes, semester and midterm marks, and CGPA history. Generated activity is labeled `SYNTHETIC RANDOM SIMULATION`. CS and EC use four sections of 90 students per year level; EE, ME, and CE use one section of 120 per year level, matching the supplied dataset's counts. The generator assigns student/faculty passwords as their institutional ID followed by `@123` (for example, `O220001@123`); passwords are bcrypt-hashed. Students/faculty may sign in using their institutional ID or campus email. The admin seed login remains `admin@campusone.demo` / `Admin@123`. The login page's “Keep me signed in” option stores the authentication session on that device; it does not store the password.

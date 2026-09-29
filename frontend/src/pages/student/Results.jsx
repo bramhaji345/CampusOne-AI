@@ -1,27 +1,38 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Download, LayoutGrid, List, Printer } from 'lucide-react';
 import { EmptyState } from '../../components/Ui';
 import Logo from '../../components/Logo';
 import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
 
 export default function StudentResults() {
-  const [year, setYear] = useState('E2');
+  const { user } = useAuth();
+  const [year, setYear] = useState(`E${user?.year || 1}`);
   const [sem, setSem] = useState('Sem1');
   const [type, setType] = useState('sem');
   const [rows, setRows] = useState([]);
   const [compact, setCompact] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     api.get('/results', { params: { year_level: year, semester: sem, type } })
       .then((r) => setRows(r.data))
+      .catch(() => setRows([]))
       .finally(() => setLoading(false));
   }, [year, sem, type]);
 
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const refresh = () => load();
+    window.addEventListener('campus:data-changed', refresh);
+    window.addEventListener('campus:reconnected', refresh);
+    return () => { window.removeEventListener('campus:data-changed', refresh); window.removeEventListener('campus:reconnected', refresh); };
+  }, [load]);
+
   const downloadCsv = () => {
     const header = 'Subject,Marks,Max,Grade,Status\n';
-    const body = rows.map((r) => `${r.subject},${r.marks},${r.max_marks},${r.grade},${Number(r.marks) >= Number(r.max_marks) * 0.4 ? 'Pass' : 'Fail'}`).join('\n');
+    const body = rows.map((r) => `${r.subject},${r.marks ?? ''},${r.max_marks ?? ''},${r.grade ?? ''},${r.result_status ?? ''}`).join('\n');
     const blob = new Blob([header + body], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -82,18 +93,20 @@ export default function StudentResults() {
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const pct = Math.round((r.marks / r.max_marks) * 1000) / 10;
-                  const pass = pct >= 40;
-                  const gp = r.grade_points ?? (pct >= 90 ? 10 : pct >= 80 ? 9 : pct >= 70 ? 8 : pct >= 60 ? 7 : pct >= 50 ? 6 : 0);
+                  const maxMarks = Number(r.max_marks);
+                  const pct = Number.isFinite(Number(r.marks)) && maxMarks > 0 ? Math.round((Number(r.marks) / maxMarks) * 1000) / 10 : null;
+                  const status = r.result_status || (pct == null ? '—' : pct >= 40 ? 'Pass' : 'Fail');
+                  const pass = /pass|complete/i.test(status);
+                  const gp = r.grade_points ?? r.grade_point;
                   return (
                     <tr key={r.id}>
                       <td>{r.subject}</td>
-                      <td>{r.marks}</td>
-                      {!compact && <td>{r.max_marks}</td>}
-                      {!compact && <td>{pct}</td>}
+                      <td>{r.marks ?? '—'}</td>
+                      {!compact && <td>{r.max_marks ?? '—'}</td>}
+                      {!compact && <td>{pct ?? '—'}</td>}
                       <td><span className="badge-pill badge-approved">{r.grade}</span></td>
-                      {!compact && <td>{gp}</td>}
-                      <td><span className={`badge-pill ${pass ? 'badge-approved' : 'badge-rejected'}`}>{pass ? 'Pass' : 'Fail'}</span></td>
+                      {!compact && <td>{gp ?? '—'}</td>}
+                      <td><span className={`badge-pill ${pass ? 'badge-approved' : 'badge-rejected'}`}>{status}</span></td>
                     </tr>
                   );
                 })}

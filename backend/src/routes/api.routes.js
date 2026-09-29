@@ -4,6 +4,8 @@ import { asyncHandler as ah } from '../middleware/async.js';
 import * as academic from '../controllers/academic.controller.js';
 import * as campus from '../controllers/campus.controller.js';
 import * as admin from '../controllers/admin.controller.js';
+import * as imports from '../controllers/import.controller.js';
+import { subscribeEvents } from '../services/events.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -17,6 +19,14 @@ const upload = multer({
     destination: uploadDir,
     filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
   }),
+});
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (/\.(xlsx|xls)$/i.test(file.originalname)) cb(null, true);
+    else cb(new Error('Upload an Excel .xlsx or .xls file'));
+  },
 });
 
 const router = Router();
@@ -58,11 +68,29 @@ router.get('/dashboard/overview', auth, ah(admin.overview));
 
 router.get('/admin/students', auth, role('admin'), ah(admin.adminStudents));
 router.post('/admin/students', auth, role('admin'), ah(admin.createStudent));
+router.put('/admin/students/:studentId', auth, role('admin'), ah(admin.updateStudent));
 router.delete('/admin/students/:studentId', auth, role('admin'), ah(admin.deleteStudent));
 router.get('/admin/faculty', auth, role('admin'), ah(admin.adminFaculty));
 router.post('/admin/faculty', auth, role('admin'), ah(admin.createFaculty));
+router.put('/admin/faculty/:facultyId', auth, role('admin'), ah(admin.updateFaculty));
+router.delete('/admin/faculty/:facultyId', auth, role('admin'), ah(admin.deactivateFaculty));
+router.post('/admin/import/preview', auth, role('admin'), excelUpload.single('file'), ah(imports.previewImport));
+router.post('/admin/import', auth, role('admin'), excelUpload.single('file'), ah(imports.importWorkbook));
+router.get('/events', auth, ah(subscribeEvents));
 router.get('/admin/stats', auth, role('admin'), ah(admin.adminStats));
 router.get('/admin/analytics', auth, role('admin'), ah(admin.adminAnalytics));
 router.get('/admin/departments', auth, role('admin'), ah(admin.departments));
+router.post('/admin/departments', auth, role('admin'), ah(admin.saveDepartment));
+router.put('/admin/departments/:departmentId', auth, role('admin'), ah(admin.saveDepartment));
+router.delete('/admin/departments/:departmentId', auth, role('admin'), ah(admin.deleteDepartment));
+router.get('/admin/courses', auth, role('admin'), ah(admin.adminCourses));
+router.post('/admin/courses', auth, role('admin'), ah(admin.saveCourse));
+router.put('/admin/courses/:courseId', auth, role('admin'), ah(admin.saveCourse));
+router.delete('/admin/courses/:courseId', auth, role('admin'), ah(admin.deleteCourse));
+router.get('/admin/classes', auth, role('admin'), ah(admin.adminClasses));
+router.post('/admin/classes', auth, role('admin'), ah(admin.saveClass));
+router.put('/admin/classes/:classId', auth, role('admin'), ah(admin.saveClass));
+router.delete('/admin/classes/:classId', auth, role('admin'), ah(admin.deleteClass));
+router.get('/admin/audit-logs', auth, role('admin'), ah(admin.adminAuditLogs));
 
 export default router;

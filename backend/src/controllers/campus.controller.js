@@ -15,9 +15,9 @@ const PRIORITY = { urgent: 1, medical: 2, event: 3, personal: 4, other: 5 };
 export async function listTimetable(req, res) {
   if (req.user.role === 'student') {
     const student = await getStudentProfile(req.user.id);
-    const owner = `${student.dept}-${student.section}`;
+    const owner = `${student.dept}-${student.section}-E${student.year}`;
     const rows = await prisma.timetable.findMany({
-      where: { roleOwner: 'student', ownerId: owner },
+      where: { roleOwner: 'student', ownerId: { in: [owner, `${student.dept}-${student.section}`] } },
       orderBy: { period: 'asc' },
     });
     return res.json(rows.map(serializeTimetable));

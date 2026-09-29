@@ -9,7 +9,7 @@ export default function FacultyAttendance() {
   const { user } = useAuth();
   const { confirm } = useConfirm();
   const { toast } = useToast();
-  const subjects = (user?.subjects || 'Data Structures').split(',').map((s) => s.trim());
+  const subjects = (user?.subjects || '').split(',').map((s) => s.trim()).filter(Boolean);
   const [subject, setSubject] = useState(subjects[0]);
   const [classType, setClassType] = useState('lecture');
   const [students, setStudents] = useState([]);
@@ -17,13 +17,13 @@ export default function FacultyAttendance() {
   const today = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
 
   useEffect(() => {
-    api.get('/students/list', { params: { dept: user?.dept || 'CSE' } }).then((r) => {
+    api.get('/students/list', { params: { dept: user?.dept, subject } }).then((r) => {
       setStudents(r.data);
       const map = {};
       r.data.forEach((s) => { map[s.student_id] = 'present'; });
       setStatusMap(map);
     });
-  }, [user]);
+  }, [user, subject]);
 
   const save = async () => {
     const ok = await confirm({

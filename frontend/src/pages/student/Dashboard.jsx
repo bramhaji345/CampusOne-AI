@@ -33,6 +33,11 @@ export default function StudentDashboard() {
   const attPct = att?.summary?.length
     ? Math.round(att.summary.reduce((s, x) => s + x.percentage, 0) / att.summary.length)
     : 0;
+  const cgpaByYear = new Map();
+  for (const item of ai?.trend || []) {
+    const year = item.label.match(/^E[1-4]/)?.[0];
+    if (year) cgpaByYear.set(year, item.gpa);
+  }
 
   if (loading) {
     return (
@@ -55,6 +60,17 @@ export default function StudentDashboard() {
         <div className="stat-card"><div className="label">Overall Attendance</div><div className="value">{attPct}%</div></div>
         <div className="stat-card"><div className="label">Pending assignments</div><div className="value">{overview?.pendingAssignments ?? 0}</div></div>
         <div className="stat-card"><div className="label">Active outpasses</div><div className="value">{overview?.pendingOutpasses ?? 0}</div></div>
+      </div>
+
+      <div className="panel cgpa-history-panel">
+        <h3>CGPA journey</h3>
+        <div className="cgpa-history-row">
+          {Array.from({ length: user?.year || 1 }, (_, index) => `E${index + 1}`).map((year) => (
+            <div className={`cgpa-year ${year === `E${user?.year || 1}` ? 'current' : ''}`} key={year}>
+              <span>{year}</span><strong>{cgpaByYear.get(year)?.toFixed(2) || '—'}</strong>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="filters no-print">
@@ -82,15 +98,15 @@ export default function StudentDashboard() {
               <AreaChart data={ai.trend}>
                 <defs>
                   <linearGradient id="gpa" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b6dff" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#3b6dff" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--chart-primary)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--chart-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                 <YAxis domain={[0, 10]} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="gpa" stroke="#6d5efc" strokeWidth={2.5} fill="url(#gpa)" />
+                <Area type="monotone" dataKey="gpa" stroke="var(--chart-secondary)" strokeWidth={2.5} fill="url(#gpa)" />
               </AreaChart>
             </ResponsiveContainer>
           ) : <EmptyState title="No semester trend yet" />}
@@ -104,7 +120,7 @@ export default function StudentDashboard() {
                 <XAxis dataKey="subject" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={58} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="percentage" fill="#3b6dff" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="percentage" fill="var(--chart-primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : <EmptyState title="No subject scores yet" />}
