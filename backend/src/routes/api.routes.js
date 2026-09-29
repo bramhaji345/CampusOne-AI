@@ -9,17 +9,45 @@ import { subscribeEvents } from '../services/events.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const isVercel = !!process.env.VERCEL;
+
+let uploadDir;
+if (isVercel) {
+  uploadDir = path.join(os.tmpdir(), 'campusone-uploads');
+} else {
+  uploadDir = path.join(__dirname, '../../uploads');
+}
+
+if (!isVercel && !fs.existsSync(uploadDir)) {
+  try {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  } catch (err) {
+    console.error(`Warning: Could not create uploads directory at ${uploadDir}:`, err.message);
+  }
+}
+
 const upload = multer({
   storage: multer.diskStorage({
-    destination: uploadDir,
+    destination: (_req, _file, cb) => {
+      if (isVercel && !fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true }, (err) => {
+          if (err) cb(err);
+          else cb(null, uploadDir);
+        });
+        return;
+      }
+      cb(null, uploadDir);
+    },
     filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
   }),
+  limits: { fileSize: 50 * 1024 * 1024 },
 });
+
 const excelUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024, files: 1 },
