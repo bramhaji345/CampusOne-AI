@@ -29,6 +29,8 @@ The frontend is at http://localhost:5173 and API health is at http://localhost:5
 
 Set `DATABASE_URL` on the API service to the one managed PostgreSQL database shared by all clients. Configure a strong unique `JWT_SECRET`, `PORT`, and `FRONTEND_URL`. Set `VITE_API_URL` to the deployed API base URL in the frontend build environment. Run migrations once as a release step with `npx prisma migrate deploy`; do not run local database startup or seed scripts in production. Back up the shared database using the provider's managed backup facility.
 
+For GitHub-connected Vercel deployment of the frontend and API as separate projects, follow [Vercel deployment instructions](VERCEL-DEPLOYMENT.md).
+
 ## Database setup and demo data
 
 Copy `backend/.env.example` to `backend/.env` and configure your values. Then:
