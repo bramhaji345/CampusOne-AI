@@ -2,11 +2,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Load .env for local dev — silently ignored on Vercel (env vars injected by platform)
-try {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  dotenv.config({ path: path.join(__dirname, '../../.env') });
-} catch { /* no .env file in production — that's fine */ }
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 function requireEnv(name) {
   const value = process.env[name];

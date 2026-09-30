@@ -9,12 +9,13 @@
     "dev": "node --watch server.js",
     "db:local": "node scripts/start-local-db.mjs",
     "prisma:generate": "prisma generate",
-    "vercel-build": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "node prisma/seed.js",
     "db:setup": "prisma migrate deploy && node prisma/seed.js",
+    "db:restore": "node scripts/restore-database.mjs",
     "import:workbook": "node scripts/import-source-workbook.mjs",
+    "postinstall": "prisma generate",
     "test": "node test/excel-import.test.js",
     "seed:campus-data": "node scripts/seed-campus-simulation.mjs"
   },
@@ -28,7 +29,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^2.4.0",
+    "multer": "^1.4.5-lts.1",
     "qrcode": "^1.5.4",
     "xlsx": "^0.18.5"
   },

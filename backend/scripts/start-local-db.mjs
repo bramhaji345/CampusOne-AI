@@ -109,8 +109,15 @@ if (hasUsers !== 't' && hasUsers !== 'true') {
 
 const hasAdmin = psqlOk('campusone', "SELECT 1 FROM users WHERE email='admin@campusone.demo' LIMIT 1");
 if (hasAdmin !== '1') {
-  const seed = run('node', ['prisma/seed.js'], { cwd: root });
-  process.stdout.write(seed.stdout || '');
-  process.stderr.write(seed.stderr || '');
-  if (seed.status !== 0) process.exit(seed.status || 1);
+  const dumpGz = path.join(root, 'prisma', 'campusone_dump.sql.gz');
+  if (fs.existsSync(dumpGz)) {
+    console.log('Restoring complete campus database snapshot (4,320 students, 300 faculty, all marks & timetables)...');
+    const { restoreDatabase } = await import('./restore-database.mjs');
+    await restoreDatabase();
+  } else {
+    const seed = run('node', ['prisma/seed.js'], { cwd: root });
+    process.stdout.write(seed.stdout || '');
+    process.stderr.write(seed.stderr || '');
+    if (seed.status !== 0) process.exit(seed.status || 1);
+  }
 }

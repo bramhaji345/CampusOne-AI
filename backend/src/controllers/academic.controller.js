@@ -49,34 +49,55 @@ function buildInsights(student, trend, subjects) {
   };
 }
 
+/**
+ * Build all variants of a semester string for flexible querying.
+ * E.g. "Sem1" → ["Sem1", "1", "S1"]
+ *      "1"    → ["1", "Sem1", "S1"]
+ */
+function semVariants(semester) {
+  if (!semester) return [];
+  const s = String(semester).trim();
+  const num = s.replace(/^(Sem|S)/i, '');
+  const variants = new Set();
+  variants.add(s);              // as-is: "Sem1", "1", "S1"
+  variants.add(`Sem${num}`);    // "Sem1"
+  variants.add(num);            // "1"
+  variants.add(`S${num}`);      // "S1"
+  return [...variants].filter(Boolean);
+}
+
 export async function listResults(req, res) {
   const student = await getStudentProfile(req.user.id);
   const { year_level, semester, type } = req.query;
-  const rawSemester = String(semester || '');
-  const normalizedSemester = String(semester || '').replace(/^Sem/i, '');
-  const semesterValues = [...new Set([rawSemester, normalizedSemester].filter(Boolean))];
+  const semValues = semVariants(semester);
+
   if (type !== 'mid') {
+    // 1. Try simulated results first (fast path for simulation data)
     const simulatedRows = await prisma.result.findMany({
       where: {
         studentId: student.student_id,
         ...(year_level ? { yearLevel: year_level } : {}),
-        ...(semesterValues.length ? { semester: { in: semesterValues } } : {}),
-        type: 'sem', id: { startsWith: 'sim_' },
+        ...(semValues.length ? { semester: { in: semValues } } : {}),
+        type: 'sem',
+        id: { startsWith: 'sim_' },
       },
       orderBy: { subject: 'asc' },
     });
     if (simulatedRows.length) return res.json(simulatedRows.map(serializeResult));
+
+    // 2. Try studentCourseRecord (imported from Excel Student_Academic_Record)
     const courseRecords = await prisma.studentCourseRecord.findMany({
       where: {
         studentId: student.student_id,
-        ...(normalizedSemester ? { semester: normalizedSemester } : {}),
+        ...(semValues.length ? { semester: { in: semValues } } : {}),
       },
       include: { subject: true },
       orderBy: [{ semester: 'asc' }, { subject: { name: 'asc' } }],
     });
     if (courseRecords.length) {
-      const level = `E${student.year || 1}`;
-      if (year_level && year_level !== level) return res.json([]);
+      // Determine the year_level from the student record if query doesn't specify
+      const level = year_level || `E${student.year || 1}`;
+      // Filter by year_level if requested (approximate via student year or cgpa records)
       return res.json(courseRecords.map((row) => ({
         id: row.id,
         student_id: row.studentId,
@@ -87,7 +108,7 @@ export async function listResults(req, res) {
         subject: row.subject.name,
         course_code: row.subject.code,
         marks: row.marks,
-        max_marks: null,
+        max_marks: 100,
         grade: row.grade,
         grade_points: row.gradePoint,
         credit_points: row.creditPoints,
@@ -99,11 +120,13 @@ export async function listResults(req, res) {
       })));
     }
   }
+
+  // 3. Fall back to result table (mid marks, or non-simulated sem marks)
   const rows = await prisma.result.findMany({
     where: {
       studentId: student.student_id,
       ...(year_level ? { yearLevel: year_level } : {}),
-      ...(semesterValues.length ? { semester: { in: semesterValues } } : {}),
+      ...(semValues.length ? { semester: { in: semValues } } : {}),
       ...(type ? { type } : {}),
     },
     orderBy: { subject: 'asc' },
@@ -117,7 +140,10 @@ export async function aiResults(req, res) {
     where: { studentId: student.student_id },
     orderBy: [{ yearLevel: 'asc' }, { semester: 'asc' }],
   });
-  let trend = cgpaRows.map((r) => ({ label: `${r.yearLevel} ${r.semester}`, gpa: Math.round(r.gpa * 100) / 100 }));
+  let trend = cgpaRows.map((r) => ({
+    label: `${r.yearLevel} Sem${r.semester.replace(/^(Sem|S)/i, '')}`,
+    gpa: Math.round(r.gpa * 100) / 100,
+  }));
   if (!trend.length) {
     const grouped = await prisma.result.groupBy({
       by: ['yearLevel', 'semester'],
@@ -127,7 +153,7 @@ export async function aiResults(req, res) {
     trend = grouped
       .sort((a, b) => `${a.yearLevel}${a.semester}`.localeCompare(`${b.yearLevel}${b.semester}`))
       .map((r) => ({
-        label: `${r.yearLevel} ${r.semester}`,
+        label: `${r.yearLevel} Sem${r.semester.replace(/^(Sem|S)/i, '')}`,
         gpa: Math.round(((r._avg.marks || 0) / (r._avg.maxMarks || 100)) * 10 * 100) / 100,
       }));
   }
@@ -137,12 +163,24 @@ export async function aiResults(req, res) {
     where: { studentId: student.student_id, type: 'sem', ...(simulated ? { id: { startsWith: 'sim_' } } : {}) },
     _avg: { marks: true, maxMarks: true },
   });
-  const subjects = subjectGroups
-    .map((s) => ({
-      subject: s.subject,
-      percentage: Math.round(((s._avg.marks || 0) / (s._avg.maxMarks || 100)) * 1000) / 10,
-    }))
-    .sort((a, b) => b.percentage - a.percentage);
+  // Also aggregate from course records if no results
+  let subjects = subjectGroups.map((s) => ({
+    subject: s.subject,
+    percentage: Math.round(((s._avg.marks || 0) / (s._avg.maxMarks || 100)) * 1000) / 10,
+  }));
+  if (!subjects.length) {
+    const cr = await prisma.studentCourseRecord.groupBy({
+      by: ['subjectId'],
+      where: { studentId: student.student_id },
+      _avg: { marks: true },
+    });
+    const subjectNames = await prisma.subject.findMany({ where: { id: { in: cr.map((r) => r.subjectId) } }, select: { id: true, name: true } });
+    const nameMap = new Map(subjectNames.map((s) => [s.id, s.name]));
+    subjects = cr.map((r) => ({
+      subject: nameMap.get(r.subjectId) || r.subjectId,
+      percentage: Math.round(((r._avg.marks || 0) / 100) * 1000) / 10,
+    })).sort((a, b) => b.percentage - a.percentage);
+  }
   res.json(buildInsights(student, trend, subjects));
 }
 

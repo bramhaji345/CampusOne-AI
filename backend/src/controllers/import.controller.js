@@ -411,7 +411,7 @@ export async function importWorkbook(req, res) {
       newValue: { studentsCreated, studentsUpdated, facultyCreated, facultyUpdated, subjectOfferings: subjectOfferings.length, academicRecords: academicRecords.length, semesterResults: semesterRows.length, facultyAssignments: assignments.length, duplicateAssignmentsSkipped: report.duplicateRows?.Faculty_Course_Assignment || 0, advisors: advisors.length, facultyLeaves: leaves.length, synthetic: report.synthetic, source: 'CampusOne-AI_Big_Student_Faculty_Dataset_Updated_IDs_Mails.xlsx' },
     });
     return { studentsCreated, studentsUpdated, facultyCreated, facultyUpdated, departments: departments.size, branches: branches.size, subjects: subjectCache.size, subjectOfferings: subjectOfferings.length, academicRecords: academicRecords.length, semesterResults: semesterRows.length, facultyAssignments: assignments.length, duplicateAssignmentsSkipped: report.duplicateRows?.Faculty_Course_Assignment || 0, advisors: advisors.length, facultyLeaves: leaves.length };
-  }, { maxWait: 30000, timeout: 600000 });
+  }, { maxWait: 120000, timeout: 3600000 });
 
   publishEvent({ type: 'campus.imported', entity: 'campus', action: 'imported', roles: ['admin', 'faculty'] });
   res.json({ message: 'Workbook imported successfully', ...result });
