@@ -46,6 +46,17 @@ async function audit() {
     console.log('Assignments:         ', assignments);
     console.log('Sample Student (O240001):', sampleStudent ? { name: sampleStudent.user.name, email: sampleStudent.user.email, dept: sampleStudent.dept, year: sampleStudent.year } : 'NOT FOUND');
     console.log('Sample Faculty (FAC0001):', sampleFaculty ? { name: sampleFaculty.user.name, email: sampleFaculty.user.email, dept: sampleFaculty.dept } : 'NOT FOUND');
+
+    const bcrypt = (await import('bcryptjs')).default;
+    const sMatch = sampleStudent ? await bcrypt.compare('O240001@123', sampleStudent.user.password) : false;
+    const fMatch = sampleFaculty ? await bcrypt.compare('FAC0001@123', sampleFaculty.user.password) : false;
+    const adminUser = await prisma.user.findFirst({ where: { email: 'admin@campusone.demo' } });
+    const aMatch = adminUser ? await bcrypt.compare('Admin@123', adminUser.password) : false;
+
+    console.log('\n=== AUTHENTICATION INTEGRITY ON NEON ===');
+    console.log('Student (O240001@123):', sMatch ? 'VALID ✅' : 'FAILED ❌');
+    console.log('Faculty (FAC0001@123):', fMatch ? 'VALID ✅' : 'FAILED ❌');
+    console.log('Admin (Admin@123):    ', aMatch ? 'VALID ✅' : 'FAILED ❌');
   } catch(err) {
     console.error('Audit Error:', err);
   } finally {
