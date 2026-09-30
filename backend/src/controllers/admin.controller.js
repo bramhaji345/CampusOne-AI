@@ -149,53 +149,171 @@ export async function facultyList(req, res) {
   })));
 }
 
-export function generateSecurePassword(length = 10) {
-  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-  const lower = 'abcdefghjkmnpqrstuvwxyz';
-  const digits = '23456789';
-  const all = upper + lower + digits;
-  const bytes = randomBytes(length);
-  const pwd = [
-    upper[bytes[0] % upper.length],
-    lower[bytes[1] % lower.length],
-    digits[bytes[2] % digits.length],
-  ];
-  for (let i = 3; i < length; i++) {
-    pwd.push(all[bytes[i] % all.length]);
+function getRecentWeekdays(count = 10) {
+  const dates = [];
+  const curr = new Date();
+  while (dates.length < count) {
+    curr.setDate(curr.getDate() - 1);
+    const day = curr.getDay();
+    if (day !== 0 && day !== 6) {
+      const yyyy = curr.getFullYear();
+      const mm = String(curr.getMonth() + 1).padStart(2, '0');
+      const dd = String(curr.getDate()).padStart(2, '0');
+      dates.push(`${yyyy}-${mm}-${dd}`);
+    }
   }
-  for (let i = pwd.length - 1; i > 0; i--) {
-    const j = bytes[i] % (i + 1);
-    [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
-  }
-  return pwd.join('');
+  return dates;
 }
 
 export async function createStudent(req, res) {
   const { name, email, student_id, dorm_no, course, year, dept, parent_name, mobile, parent_phone, section } = req.body;
-  if (!name?.trim() || !validEmail(email) || !/^O2[1-4]\d{4}$/.test(student_id || '')) return res.status(400).json({ error: 'Provide a name, valid email, and institutional student ID (O24/O23/O22/O21 plus four digits).' });
+  if (!name?.trim() || !validEmail(email) || !/^O2[1-4]\d{4}$/i.test(student_id || '')) {
+    return res.status(400).json({ error: 'Provide a name, valid email, and institutional student ID (O24/O23/O22/O21 plus four digits).' });
+  }
   const department = await getDepartment(dept);
-  const temporaryPassword = generateSecurePassword(10);
+  const studentId = student_id.trim().toUpperCase();
+  const temporaryPassword = `${studentId}@123`;
   const yearLevel = `E${Math.min(Math.max(Number(year || 1), 1), 4)}`;
   const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
   const created = await prisma.$transaction(async (tx) => {
     const courseRow = await tx.course.findFirst({ where: { departmentId: department.id, name: course || 'B.Tech' } })
       || await tx.course.create({ data: { name: course || 'B.Tech', code: `BTECH-${department.code}`, departmentId: department.id } });
     const batch = await tx.batch.findFirst({ where: { courseId: courseRow.id, yearLevel } })
       || await tx.batch.create({ data: { name: `${yearLevel}-${department.code}`, yearLevel, courseId: courseRow.id } });
-    const classRow = await tx.class.upsert({ where: { batchId_section: { batchId: batch.id, section: section || 'A' } }, update: {}, create: { section: section || 'A', batchId: batch.id } });
-    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'student', name: name.trim() } });
-    const student = await tx.student.create({ data: {
-      userId: user.id, studentId: student_id.trim(), dormNo: dorm_no || null, year: Number(year || 1),
-      parentName: parent_name || null, mobile: mobile || null, parentPhone: parent_phone || null,
-      section: section || 'A', courseName: course || 'B.Tech', deptCode: department.code,
-      departmentId: department.id, courseId: courseRow.id, classId: classRow.id,
-    } });
-    await audit(tx, req, { action: 'created', entity: 'student', entityId: student.studentId, newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code } });
+    const classRow = await tx.class.upsert({
+      where: { batchId_section: { batchId: batch.id, section: section || 'A' } },
+      update: {},
+      create: { section: section || 'A', batchId: batch.id },
+    });
+    const user = await tx.user.create({
+      data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'student', name: name.trim() },
+    });
+    const student = await tx.student.create({
+      data: {
+        userId: user.id,
+        studentId: studentId,
+        dormNo: dorm_no || null,
+        year: Number(year || 1),
+        parentName: parent_name || null,
+        mobile: mobile || null,
+        parentPhone: parent_phone || null,
+        section: section || 'A',
+        courseName: course || 'B.Tech',
+        deptCode: department.code,
+        departmentId: department.id,
+        courseId: courseRow.id,
+        classId: classRow.id,
+        cgpa: 8.35,
+      },
+    });
+
+    // Assign sample academic data (Results, Attendance, CGPA, and Course Records)
+    let subjects = await tx.subject.findMany({ where: { departmentId: department.id }, take: 6 });
+    if (!subjects.length) subjects = await tx.subject.findMany({ take: 6 });
+
+    const instructor = await tx.faculty.findFirst({
+      where: { departmentId: department.id, active: true },
+    }) || await tx.faculty.findFirst({ where: { active: true } });
+
+    const sampleScores = [
+      { marks: 85, mid: 26, grade: 'A', points: 9 },
+      { marks: 78, mid: 24, grade: 'B+', points: 8 },
+      { marks: 92, mid: 28, grade: 'A+', points: 10 },
+      { marks: 88, mid: 27, grade: 'A', points: 9 },
+      { marks: 75, mid: 22, grade: 'B', points: 7 },
+      { marks: 82, mid: 25, grade: 'A', points: 8 },
+    ];
+
+    const recentDates = getRecentWeekdays(8);
+
+    for (let i = 0; i < subjects.length; i++) {
+      const sub = subjects[i];
+      const score = sampleScores[i % sampleScores.length];
+
+      // Semester Exam Result
+      await tx.result.create({
+        data: {
+          studentId,
+          subjectId: sub.id,
+          yearLevel,
+          semester: 'Sem1',
+          type: 'sem',
+          subject: sub.name,
+          marks: score.marks,
+          maxMarks: 100,
+          grade: score.grade,
+          gradePoints: score.points,
+        },
+      });
+
+      // Mid Exam Result
+      await tx.result.create({
+        data: {
+          studentId,
+          subjectId: sub.id,
+          yearLevel,
+          semester: 'Sem1',
+          type: 'mid',
+          subject: sub.name,
+          marks: score.mid,
+          maxMarks: 30,
+          grade: score.grade,
+          gradePoints: score.points,
+        },
+      });
+
+      // Attendance records
+      if (instructor) {
+        for (let d = 0; d < recentDates.length; d++) {
+          const isPresent = d !== 2; // ~88% attendance
+          await tx.attendance.create({
+            data: {
+              studentId,
+              subjectId: sub.id,
+              facultyId: instructor.facultyId,
+              subject: sub.name,
+              classType: i >= 4 ? 'lab' : 'lecture',
+              date: recentDates[d],
+              status: isPresent ? 'present' : 'absent',
+            },
+          });
+        }
+      }
+    }
+
+    // Semester CGPA record
+    await tx.semesterCgpa.create({
+      data: {
+        studentId,
+        yearLevel,
+        semester: 'Sem1',
+        gpa: 8.35,
+        academicYear: '2024-25',
+        totalCredits: 20,
+        earnedCredits: 20,
+        totalCreditPoints: 167,
+        cumulativeCredits: 20,
+        cumulativeCreditPoints: 167,
+        academicStatus: 'Active',
+        sourceStatus: 'system-entered',
+      },
+    });
+
+    await audit(tx, req, {
+      action: 'created',
+      entity: 'student',
+      entityId: student.studentId,
+      newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code },
+    });
+
     return { ...student, user };
   });
+
   publishEvent({ type: 'student.created', entity: 'student', entityId: created.studentId, action: 'created', roles: ['admin', 'faculty'] });
+
   res.status(201).json({
-    message: 'Student account created successfully. Save this temporary password; it will not be shown again.',
+    message: 'Student account created successfully with sample academic data. Save this temporary password; it will not be shown again.',
     student: {
       name: created.user.name,
       student_id: created.studentId,
@@ -211,22 +329,79 @@ export async function createStudent(req, res) {
 
 export async function createFaculty(req, res) {
   const { name, email, faculty_id, dept, designation, mobile, subjects } = req.body;
-  if (!name?.trim() || !validEmail(email) || !faculty_id?.trim()) return res.status(400).json({ error: 'Provide a name, valid email, and faculty ID.' });
+  if (!name?.trim() || !validEmail(email) || !faculty_id?.trim()) {
+    return res.status(400).json({ error: 'Provide a name, valid email, and faculty ID.' });
+  }
   const department = await getDepartment(dept);
-  const temporaryPassword = generateSecurePassword(10);
+  const facultyId = faculty_id.trim().toUpperCase();
+  const temporaryPassword = `${facultyId}@123`;
   const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
   const created = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'faculty', name: name.trim() } });
-    const faculty = await tx.faculty.create({ data: {
-      userId: user.id, facultyId: faculty_id.trim(), designation: designation || 'Requires confirmation',
-      mobile: mobile || null, subjectsText: subjects || '', deptCode: department.code, departmentId: department.id,
-    } });
-    await audit(tx, req, { action: 'created', entity: 'faculty', entityId: faculty.facultyId, newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code } });
+    const user = await tx.user.create({
+      data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'faculty', name: name.trim() },
+    });
+    const faculty = await tx.faculty.create({
+      data: {
+        userId: user.id,
+        facultyId: facultyId,
+        designation: designation || 'Assistant Professor',
+        mobile: mobile || null,
+        subjectsText: subjects || '',
+        deptCode: department.code,
+        departmentId: department.id,
+      },
+    });
+
+    // Assign sample teaching subjects and class
+    const sampleSubjects = await tx.subject.findMany({ where: { departmentId: department.id }, take: 2 });
+    const sampleClass = await tx.class.findFirst({
+      where: { batch: { course: { departmentId: department.id } } },
+    }) || await tx.class.findFirst();
+
+    if (sampleSubjects.length > 0 && sampleClass) {
+      for (const sub of sampleSubjects) {
+        await tx.facultySubject.create({
+          data: {
+            facultyId: faculty.facultyId,
+            subjectId: sub.id,
+            classId: sampleClass.id,
+          },
+        });
+      }
+      const subjNames = sampleSubjects.map((s) => s.name).join(', ');
+      await tx.faculty.update({
+        where: { id: faculty.id },
+        data: { subjectsText: subjNames },
+      });
+      // Sample assignment
+      await tx.assignment.create({
+        data: {
+          facultyId: faculty.facultyId,
+          classId: sampleClass.id,
+          subjectId: sampleSubjects[0].id,
+          title: `${sampleSubjects[0].name} Assignment 1`,
+          description: 'Complete practice questions and submit code before the deadline.',
+          subject: sampleSubjects[0].name,
+          dueDate: '2026-10-20',
+        },
+      });
+    }
+
+    await audit(tx, req, {
+      action: 'created',
+      entity: 'faculty',
+      entityId: faculty.facultyId,
+      newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code },
+    });
+
     return { ...faculty, user };
   });
+
   publishEvent({ type: 'faculty.created', entity: 'faculty', entityId: created.facultyId, action: 'created', roles: ['admin', 'faculty'] });
+
   res.status(201).json({
-    message: 'Faculty account created successfully. Save this temporary password; it will not be shown again.',
+    message: 'Faculty account created successfully with sample course assignments. Save this temporary password; it will not be shown again.',
     faculty: {
       name: created.user.name,
       faculty_id: created.facultyId,
@@ -241,14 +416,14 @@ export async function createFaculty(req, res) {
 
 export async function resetStudentPassword(req, res) {
   const { studentId } = req.params;
-  const student = await prisma.student.findUnique({
-    where: { studentId },
+  const student = await prisma.student.findFirst({
+    where: { studentId: { equals: studentId, mode: 'insensitive' } },
     include: { user: true },
   });
   if (!student) return res.status(404).json({ error: 'Student not found.' });
   if (student.user.status !== 'active') return res.status(400).json({ error: 'Cannot reset password for deactivated student account.' });
 
-  const temporaryPassword = generateSecurePassword(10);
+  const temporaryPassword = `${student.studentId.toUpperCase()}@123`;
   const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
 
   await prisma.$transaction(async (tx) => {
@@ -287,14 +462,14 @@ export async function resetStudentPassword(req, res) {
 
 export async function resetFacultyPassword(req, res) {
   const { facultyId } = req.params;
-  const faculty = await prisma.faculty.findUnique({
-    where: { facultyId },
+  const faculty = await prisma.faculty.findFirst({
+    where: { facultyId: { equals: facultyId, mode: 'insensitive' } },
     include: { user: true },
   });
   if (!faculty) return res.status(404).json({ error: 'Faculty not found.' });
   if (faculty.user.status !== 'active') return res.status(400).json({ error: 'Cannot reset password for deactivated faculty account.' });
 
-  const temporaryPassword = generateSecurePassword(10);
+  const temporaryPassword = `${faculty.facultyId.toUpperCase()}@123`;
   const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
 
   await prisma.$transaction(async (tx) => {

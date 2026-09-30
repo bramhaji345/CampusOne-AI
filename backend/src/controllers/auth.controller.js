@@ -16,16 +16,36 @@ export async function login(req, res) {
     return res.status(400).json({ error: 'Choose a valid portal: student, faculty, or admin' });
   }
   let user = await prisma.user.findFirst({
-    where: { email: identifier.toLowerCase(), role, status: 'active' },
+    where: { email: { equals: identifier, mode: 'insensitive' }, role, status: 'active' },
     include: { student: true, faculty: true },
   });
   if (!user && role === 'student') {
-    const student = await prisma.student.findUnique({ where: { studentId: identifier.toUpperCase() }, include: { user: true } });
-    if (student?.user.status === 'active' && student.user.role === role) user = { ...student.user, student, faculty: null };
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { studentId: { equals: identifier, mode: 'insensitive' } },
+          { user: { email: { equals: identifier, mode: 'insensitive' } } },
+        ],
+      },
+      include: { user: true },
+    });
+    if (student?.user && student.user.status === 'active' && student.user.role === role) {
+      user = { ...student.user, student, faculty: null };
+    }
   }
   if (!user && role === 'faculty') {
-    const faculty = await prisma.faculty.findUnique({ where: { facultyId: identifier.toUpperCase() }, include: { user: true } });
-    if (faculty?.user.status === 'active' && faculty.user.role === role) user = { ...faculty.user, faculty, student: null };
+    const faculty = await prisma.faculty.findFirst({
+      where: {
+        OR: [
+          { facultyId: { equals: identifier, mode: 'insensitive' } },
+          { user: { email: { equals: identifier, mode: 'insensitive' } } },
+        ],
+      },
+      include: { user: true },
+    });
+    if (faculty?.user && faculty.user.status === 'active' && faculty.user.role === role) {
+      user = { ...faculty.user, faculty, student: null };
+    }
   }
   if (!user) return res.status(401).json({ error: 'Invalid credentials for this portal' });
   const ok = await bcrypt.compare(String(password), user.password);
