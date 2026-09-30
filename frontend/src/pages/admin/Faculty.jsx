@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import CredentialModal from '../../components/CredentialModal';
 import api from '../../api';
 
 const blank = { name: '', email: '', faculty_id: '', dept: '', designation: '', mobile: '', subjects: '' };
@@ -14,6 +15,7 @@ export default function AdminFaculty() {
   const [total, setTotal] = useState(0);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [credentialModalData, setCredentialModalData] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -38,11 +40,41 @@ export default function AdminFaculty() {
         setMessage('Faculty changes saved.');
       } else {
         const { data } = await api.post('/admin/faculty', form);
-        setMessage(`Faculty created. Share this temporary password securely: ${data.temporaryPassword}`);
+        setCredentialModalData({
+          title: 'Account Created Successfully',
+          name: data.faculty?.name || form.name,
+          faculty_id: data.faculty?.faculty_id || form.faculty_id,
+          email: data.faculty?.email || form.email,
+          temporaryPassword: data.temporaryPassword,
+          role: 'faculty',
+          isReset: false,
+        });
+        setMessage('Faculty account created successfully.');
       }
       setForm({ ...blank, dept: departments[0]?.code || '' }); setEdit(null); await load();
     } catch (err) { setError(err.response?.data?.error || 'Could not save faculty.'); }
   };
+
+  const resetPassword = async (faculty) => {
+    if (!window.confirm(`Reset password for faculty ${faculty.name} (${faculty.faculty_id})?\n\nA new temporary password will be generated.`)) return;
+    setError(''); setMessage('');
+    try {
+      const { data } = await api.post(`/admin/faculty/${encodeURIComponent(faculty.faculty_id)}/reset-password`);
+      setCredentialModalData({
+        title: 'Password Reset Successfully',
+        name: data.faculty?.name || faculty.name,
+        faculty_id: data.faculty?.faculty_id || faculty.faculty_id,
+        email: data.faculty?.email || faculty.email,
+        temporaryPassword: data.temporaryPassword,
+        role: 'faculty',
+        isReset: true,
+      });
+      setMessage(`Password reset for ${faculty.faculty_id}.`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not reset faculty password.');
+    }
+  };
+
   const beginEdit = (faculty) => {
     setEdit(faculty);
     setForm({ name: faculty.name, email: faculty.email, faculty_id: faculty.faculty_id, dept: faculty.dept, designation: faculty.designation || '', mobile: faculty.mobile || '', subjects: faculty.subjects || '' });
@@ -72,10 +104,11 @@ export default function AdminFaculty() {
       <div className="panel">
         <div className="filters"><input aria-label="Search faculty" placeholder="Search faculty ID, employee ID, name, email, department…" value={query} onChange={(e) => { setQuery(e.target.value); setPage(1); }} /><span className="muted">{total.toLocaleString()} faculty</span></div>
         <div className="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Dept</th><th>Designation</th><th>Subjects</th><th>Actions</th></tr></thead>
-          <tbody>{list.map((f) => <tr key={f.faculty_id}><td>{f.faculty_id}</td><td>{f.name}</td><td>{f.email}</td><td>{f.dept}</td><td>{f.designation}</td><td>{f.subjects}</td><td><div className="filters"><button className="btn btn-ghost btn-sm" onClick={() => beginEdit(f)} type="button">Edit</button><button className="btn btn-ghost btn-sm" onClick={() => deactivate(f)} type="button">Deactivate</button></div></td></tr>)}</tbody>
+          <tbody>{list.map((f) => <tr key={f.faculty_id}><td>{f.faculty_id}</td><td>{f.name}</td><td>{f.email}</td><td>{f.dept}</td><td>{f.designation}</td><td>{f.subjects}</td><td><div className="filters"><button className="btn btn-ghost btn-sm" onClick={() => beginEdit(f)} type="button">Edit</button><button className="btn btn-ghost btn-sm" onClick={() => resetPassword(f)} type="button" title="Generate new temporary password">Reset Password</button><button className="btn btn-ghost btn-sm" onClick={() => deactivate(f)} type="button">Deactivate</button></div></td></tr>)}</tbody>
         </table></div>
         <div className="filters" style={{ justifyContent: 'space-between', marginTop: 12 }}><span className="muted">Page {page} of {pages}</span><div className="filters"><button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button></div></div>
       </div>
+      <CredentialModal data={credentialModalData} onClose={() => setCredentialModalData(null)} />
     </div>
   );
 }

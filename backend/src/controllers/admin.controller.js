@@ -149,19 +149,41 @@ export async function facultyList(req, res) {
   })));
 }
 
+export function generateSecurePassword(length = 10) {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const all = upper + lower + digits;
+  const bytes = randomBytes(length);
+  const pwd = [
+    upper[bytes[0] % upper.length],
+    lower[bytes[1] % lower.length],
+    digits[bytes[2] % digits.length],
+  ];
+  for (let i = 3; i < length; i++) {
+    pwd.push(all[bytes[i] % all.length]);
+  }
+  for (let i = pwd.length - 1; i > 0; i--) {
+    const j = bytes[i] % (i + 1);
+    [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
+  }
+  return pwd.join('');
+}
+
 export async function createStudent(req, res) {
   const { name, email, student_id, dorm_no, course, year, dept, parent_name, mobile, parent_phone, section } = req.body;
   if (!name?.trim() || !validEmail(email) || !/^O2[1-4]\d{4}$/.test(student_id || '')) return res.status(400).json({ error: 'Provide a name, valid email, and institutional student ID (O24/O23/O22/O21 plus four digits).' });
   const department = await getDepartment(dept);
-  const temporaryPassword = randomBytes(9).toString('base64url');
+  const temporaryPassword = generateSecurePassword(10);
   const yearLevel = `E${Math.min(Math.max(Number(year || 1), 1), 4)}`;
+  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
   const created = await prisma.$transaction(async (tx) => {
     const courseRow = await tx.course.findFirst({ where: { departmentId: department.id, name: course || 'B.Tech' } })
       || await tx.course.create({ data: { name: course || 'B.Tech', code: `BTECH-${department.code}`, departmentId: department.id } });
     const batch = await tx.batch.findFirst({ where: { courseId: courseRow.id, yearLevel } })
       || await tx.batch.create({ data: { name: `${yearLevel}-${department.code}`, yearLevel, courseId: courseRow.id } });
     const classRow = await tx.class.upsert({ where: { batchId_section: { batchId: batch.id, section: section || 'A' } }, update: {}, create: { section: section || 'A', batchId: batch.id } });
-    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: await bcrypt.hash(temporaryPassword, 10), role: 'student', name: name.trim() } });
+    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'student', name: name.trim() } });
     const student = await tx.student.create({ data: {
       userId: user.id, studentId: student_id.trim(), dormNo: dorm_no || null, year: Number(year || 1),
       parentName: parent_name || null, mobile: mobile || null, parentPhone: parent_phone || null,
@@ -169,28 +191,144 @@ export async function createStudent(req, res) {
       departmentId: department.id, courseId: courseRow.id, classId: classRow.id,
     } });
     await audit(tx, req, { action: 'created', entity: 'student', entityId: student.studentId, newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code } });
-    return student;
+    return { ...student, user };
   });
   publishEvent({ type: 'student.created', entity: 'student', entityId: created.studentId, action: 'created', roles: ['admin', 'faculty'] });
-  res.status(201).json({ message: 'Student created. Share this temporary password securely; it will not be shown again.', temporaryPassword, version: created.version });
+  res.status(201).json({
+    message: 'Student account created successfully. Save this temporary password; it will not be shown again.',
+    student: {
+      name: created.user.name,
+      student_id: created.studentId,
+      email: created.user.email,
+      dept: created.deptCode,
+      year: created.year,
+      section: created.section,
+    },
+    temporaryPassword,
+    version: created.version,
+  });
 }
 
 export async function createFaculty(req, res) {
   const { name, email, faculty_id, dept, designation, mobile, subjects } = req.body;
   if (!name?.trim() || !validEmail(email) || !faculty_id?.trim()) return res.status(400).json({ error: 'Provide a name, valid email, and faculty ID.' });
   const department = await getDepartment(dept);
-  const temporaryPassword = randomBytes(9).toString('base64url');
+  const temporaryPassword = generateSecurePassword(10);
+  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
   const created = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: await bcrypt.hash(temporaryPassword, 10), role: 'faculty', name: name.trim() } });
+    const user = await tx.user.create({ data: { email: email.trim().toLowerCase(), password: hashedPassword, role: 'faculty', name: name.trim() } });
     const faculty = await tx.faculty.create({ data: {
       userId: user.id, facultyId: faculty_id.trim(), designation: designation || 'Requires confirmation',
       mobile: mobile || null, subjectsText: subjects || '', deptCode: department.code, departmentId: department.id,
     } });
     await audit(tx, req, { action: 'created', entity: 'faculty', entityId: faculty.facultyId, newValue: { name: name.trim(), email: email.trim().toLowerCase(), dept: department.code } });
-    return faculty;
+    return { ...faculty, user };
   });
   publishEvent({ type: 'faculty.created', entity: 'faculty', entityId: created.facultyId, action: 'created', roles: ['admin', 'faculty'] });
-  res.status(201).json({ message: 'Faculty created. Share this temporary password securely; it will not be shown again.', temporaryPassword, version: created.version });
+  res.status(201).json({
+    message: 'Faculty account created successfully. Save this temporary password; it will not be shown again.',
+    faculty: {
+      name: created.user.name,
+      faculty_id: created.facultyId,
+      email: created.user.email,
+      dept: created.deptCode,
+      designation: created.designation,
+    },
+    temporaryPassword,
+    version: created.version,
+  });
+}
+
+export async function resetStudentPassword(req, res) {
+  const { studentId } = req.params;
+  const student = await prisma.student.findUnique({
+    where: { studentId },
+    include: { user: true },
+  });
+  if (!student) return res.status(404).json({ error: 'Student not found.' });
+  if (student.user.status !== 'active') return res.status(400).json({ error: 'Cannot reset password for deactivated student account.' });
+
+  const temporaryPassword = generateSecurePassword(10);
+  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: student.userId },
+      data: { password: hashedPassword, version: { increment: 1 } },
+    });
+    await audit(tx, req, {
+      action: 'password_reset',
+      entity: 'student',
+      entityId: student.studentId,
+      newValue: { resetBy: req.user.email },
+    });
+  });
+
+  publishEvent({
+    type: 'student.password_reset',
+    entity: 'student',
+    entityId: student.studentId,
+    action: 'password_reset',
+    roles: ['admin'],
+  });
+
+  res.json({
+    message: 'Student password reset successfully. Save this temporary password; it will not be shown again.',
+    student: {
+      name: student.user.name,
+      student_id: student.studentId,
+      email: student.user.email,
+      dept: student.deptCode,
+      year: student.year,
+    },
+    temporaryPassword,
+  });
+}
+
+export async function resetFacultyPassword(req, res) {
+  const { facultyId } = req.params;
+  const faculty = await prisma.faculty.findUnique({
+    where: { facultyId },
+    include: { user: true },
+  });
+  if (!faculty) return res.status(404).json({ error: 'Faculty not found.' });
+  if (faculty.user.status !== 'active') return res.status(400).json({ error: 'Cannot reset password for deactivated faculty account.' });
+
+  const temporaryPassword = generateSecurePassword(10);
+  const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: faculty.userId },
+      data: { password: hashedPassword, version: { increment: 1 } },
+    });
+    await audit(tx, req, {
+      action: 'password_reset',
+      entity: 'faculty',
+      entityId: faculty.facultyId,
+      newValue: { resetBy: req.user.email },
+    });
+  });
+
+  publishEvent({
+    type: 'faculty.password_reset',
+    entity: 'faculty',
+    entityId: faculty.facultyId,
+    action: 'password_reset',
+    roles: ['admin'],
+  });
+
+  res.json({
+    message: 'Faculty password reset successfully. Save this temporary password; it will not be shown again.',
+    faculty: {
+      name: faculty.user.name,
+      faculty_id: faculty.facultyId,
+      email: faculty.user.email,
+      dept: faculty.deptCode,
+      designation: faculty.designation,
+    },
+    temporaryPassword,
+  });
 }
 
 export async function deleteStudent(req, res) {

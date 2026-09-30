@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
+import CredentialModal from '../../components/CredentialModal';
 import api from '../../api';
 
 const emptyForm = { name: '', email: '', student_id: '', dorm_no: '', course: 'B.Tech', year: 1, dept: '', parent_name: '', mobile: '', parent_phone: '', section: 'A' };
@@ -21,6 +22,7 @@ export default function AdminStudents() {
   const [importReport, setImportReport] = useState(null);
   const [allowSynthetic, setAllowSynthetic] = useState(false);
   const [allowUnconfirmed, setAllowUnconfirmed] = useState(false);
+  const [credentialModalData, setCredentialModalData] = useState(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -60,12 +62,41 @@ export default function AdminStudents() {
         toast('Student changes saved.');
       } else {
         const { data } = await api.post('/admin/students', form);
-        toast(`Student created. Temporary password: ${data.temporaryPassword}`);
+        setCredentialModalData({
+          title: 'Account Created Successfully',
+          name: data.student?.name || form.name,
+          student_id: data.student?.student_id || form.student_id,
+          email: data.student?.email || form.email,
+          temporaryPassword: data.temporaryPassword,
+          role: 'student',
+          isReset: false,
+        });
+        toast('Student created successfully.');
       }
       setForm({ ...emptyForm, dept: departments[0]?.code || '' });
       setEdit(null);
       await load();
     } catch (err) { setError(err.response?.data?.error || 'Could not save student.'); }
+  };
+
+  const resetPassword = async (student) => {
+    if (!window.confirm(`Reset password for student ${student.name} (${student.student_id})?\n\nA new temporary password will be generated.`)) return;
+    setError('');
+    try {
+      const { data } = await api.post(`/admin/students/${encodeURIComponent(student.student_id)}/reset-password`);
+      setCredentialModalData({
+        title: 'Password Reset Successfully',
+        name: data.student?.name || student.name,
+        student_id: data.student?.student_id || student.student_id,
+        email: data.student?.email || student.email,
+        temporaryPassword: data.temporaryPassword,
+        role: 'student',
+        isReset: true,
+      });
+      toast(`Password reset for ${student.student_id}.`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Could not reset student password.');
+    }
   };
 
   const beginEdit = (student) => {
@@ -157,12 +188,17 @@ export default function AdminStudents() {
           <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Dept</th><th>Year</th><th>Section</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody>{list.map((s) => <tr key={s.student_id}>
             <td>{s.student_id}</td><td>{s.name}</td><td>{s.email}</td><td>{s.dept}</td><td>{s.year}</td><td>{s.section}</td><td>{s.active ? 'Active' : 'Inactive'}</td>
-            <td><div className="filters"><button className="btn btn-ghost btn-sm" type="button" onClick={() => beginEdit(s)}>Edit</button>{s.active && <button className="btn btn-ghost btn-sm" type="button" onClick={() => deactivate(s)}>Deactivate</button>}</div></td>
+            <td><div className="filters">
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => beginEdit(s)}>Edit</button>
+              {s.active && <button className="btn btn-ghost btn-sm" type="button" onClick={() => resetPassword(s)} title="Generate new temporary password">Reset Password</button>}
+              {s.active && <button className="btn btn-ghost btn-sm" type="button" onClick={() => deactivate(s)}>Deactivate</button>}
+            </div></td>
           </tr>)}</tbody>
         </table></div>
         {loading && <p className="muted">Loading…</p>}
         <div className="filters" style={{ justifyContent: 'space-between', marginTop: 12 }}><span className="muted">Page {page} of {pages}</span><div className="filters"><button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</button><button className="btn btn-ghost btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>Next</button></div></div>
       </div>
+      <CredentialModal data={credentialModalData} onClose={() => setCredentialModalData(null)} />
     </div>
   );
 }

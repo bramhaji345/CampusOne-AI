@@ -74,10 +74,12 @@ router.get('/dashboard/overview', auth, ah(admin.overview));
 
 router.get('/admin/students', auth, role('admin'), ah(admin.adminStudents));
 router.post('/admin/students', auth, role('admin'), ah(admin.createStudent));
+router.post('/admin/students/:studentId/reset-password', auth, role('admin'), ah(admin.resetStudentPassword));
 router.put('/admin/students/:studentId', auth, role('admin'), ah(admin.updateStudent));
 router.delete('/admin/students/:studentId', auth, role('admin'), ah(admin.deleteStudent));
 router.get('/admin/faculty', auth, role('admin'), ah(admin.adminFaculty));
 router.post('/admin/faculty', auth, role('admin'), ah(admin.createFaculty));
+router.post('/admin/faculty/:facultyId/reset-password', auth, role('admin'), ah(admin.resetFacultyPassword));
 router.put('/admin/faculty/:facultyId', auth, role('admin'), ah(admin.updateFaculty));
 router.delete('/admin/faculty/:facultyId', auth, role('admin'), ah(admin.deactivateFaculty));
 router.post('/admin/import/preview', auth, role('admin'), excelUpload.single('file'), ah(imports.previewImport));
