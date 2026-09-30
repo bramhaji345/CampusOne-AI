@@ -9,7 +9,7 @@ export function audit(tx, req, { action, entity, entityId = null, oldValue = nul
       entityId: entityId == null ? null : String(entityId),
       oldValue: oldValue == null ? undefined : oldValue,
       newValue: newValue == null ? undefined : newValue,
-      requestInfo: `${req.ip || ''} ${req.get('user-agent') || ''}`.trim().slice(0, 1000) || null,
+      requestInfo: `${req.ip || ''} ${typeof req.get === 'function' ? req.get('user-agent') : req.headers?.['user-agent'] || ''}`.trim().slice(0, 1000) || null,
     },
   });
 }

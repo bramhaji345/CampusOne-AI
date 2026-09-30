@@ -45,7 +45,7 @@ app.use((err, _req, res, _next) => {
       error: 'Database is not running. In the backend folder run npm run db:local, then try login again.',
     });
   }
-  res.status(500).json({ error: 'Something went wrong' });
+  res.status(500).json({ error: err.message || 'Something went wrong', code: err.code });
 });
 
 export default app;

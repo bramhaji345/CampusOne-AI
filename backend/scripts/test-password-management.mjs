@@ -2,11 +2,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const BASE_URL = process.env.API_URL || 'http://localhost:5000';
+
 async function runTest() {
-  console.log('=== RUNNING DEFAULT PASSWORD & SAMPLE DATA INTEGRITY TEST ===');
+  console.log(`=== RUNNING DEFAULT PASSWORD & SAMPLE DATA INTEGRITY TEST (${BASE_URL}) ===`);
 
   // 1. Authenticate as admin
-  const adminLogin = await fetch('http://localhost:5000/api/auth/login', {
+  const adminLogin = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'admin@campusone.demo', password: 'Admin@123', role: 'admin' })
@@ -27,7 +29,7 @@ async function runTest() {
   await prisma.user.deleteMany({ where: { email: 'fac9999@campusone.edu' } });
 
   // 2. Admin creates student O249999
-  const createStudentRes = await fetch('http://localhost:5000/api/admin/students', {
+  const createStudentRes = await fetch(`${BASE_URL}/api/admin/students`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -49,7 +51,7 @@ async function runTest() {
   }
 
   // 3. Test Student Login with ID & password (uppercase)
-  const studentLogin1 = await fetch('http://localhost:5000/api/auth/login', {
+  const studentLogin1 = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'O249999', password: 'O249999@123', role: 'student' })
@@ -58,7 +60,7 @@ async function runTest() {
   if (!studentLogin1.token) throw new Error('Student login failed with O249999');
 
   // 4. Test Student Login with lowercase ID
-  const studentLogin2 = await fetch('http://localhost:5000/api/auth/login', {
+  const studentLogin2 = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'o249999', password: 'O249999@123', role: 'student' })
@@ -67,7 +69,7 @@ async function runTest() {
   if (!studentLogin2.token) throw new Error('Student login failed with o249999');
 
   // 5. Test Student Login with Email
-  const studentLogin3 = await fetch('http://localhost:5000/api/auth/login', {
+  const studentLogin3 = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'o249999@campusone.edu', password: 'O249999@123', role: 'student' })
@@ -89,18 +91,18 @@ async function runTest() {
   if (cgpa.length === 0) throw new Error('No CGPA record generated for student');
 
   // 7. Test Student Dashboard APIs for this new student!
-  const resultsAiRes = await fetch('http://localhost:5000/api/results/ai-analysis', {
+  const resultsAiRes = await fetch(`${BASE_URL}/api/results/ai-analysis`, {
     headers: { Authorization: 'Bearer ' + studentLogin1.token }
   }).then(r => r.json());
   console.log('Student Dashboard results/ai-analysis trend length:', resultsAiRes.trend?.length);
 
-  const attAiRes = await fetch('http://localhost:5000/api/attendance/ai-analysis', {
+  const attAiRes = await fetch(`${BASE_URL}/api/attendance/ai-analysis`, {
     headers: { Authorization: 'Bearer ' + studentLogin1.token }
   }).then(r => r.json());
   console.log('Student Dashboard attendance/ai-analysis percentage:', attAiRes.percentage);
 
   // 8. Admin creates faculty FAC9999
-  const createFacultyRes = await fetch('http://localhost:5000/api/admin/faculty', {
+  const createFacultyRes = await fetch(`${BASE_URL}/api/admin/faculty`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -121,7 +123,7 @@ async function runTest() {
   }
 
   // 9. Test Faculty Login with uppercase & lowercase ID
-  const facultyLogin1 = await fetch('http://localhost:5000/api/auth/login', {
+  const facultyLogin1 = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'FAC9999', password: 'FAC9999@123', role: 'faculty' })
@@ -129,7 +131,7 @@ async function runTest() {
   console.log('Faculty login with uppercase ID (FAC9999):', Boolean(facultyLogin1.token));
   if (!facultyLogin1.token) throw new Error('Faculty login failed with FAC9999');
 
-  const facultyLogin2 = await fetch('http://localhost:5000/api/auth/login', {
+  const facultyLogin2 = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'fac9999', password: 'FAC9999@123', role: 'faculty' })
@@ -144,14 +146,14 @@ async function runTest() {
   console.log('Assigned Faculty Assignments count:', facultyAssigns.length);
 
   // 11. Test Reset Password
-  const resetStudent = await fetch('http://localhost:5000/api/admin/students/O249999/reset-password', {
+  const resetStudent = await fetch(`${BASE_URL}/api/admin/students/O249999/reset-password`, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + adminLogin.token }
   }).then(r => r.json());
   console.log('Reset Student Password:', resetStudent.temporaryPassword);
   if (resetStudent.temporaryPassword !== 'O249999@123') throw new Error('Reset student password mismatch');
 
-  const resetFaculty = await fetch('http://localhost:5000/api/admin/faculty/FAC9999/reset-password', {
+  const resetFaculty = await fetch(`${BASE_URL}/api/admin/faculty/FAC9999/reset-password`, {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + adminLogin.token }
   }).then(r => r.json());

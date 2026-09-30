@@ -226,60 +226,64 @@ export async function createStudent(req, res) {
     ];
 
     const recentDates = getRecentWeekdays(8);
+    const resultsData = [];
+    const attendanceData = [];
 
     for (let i = 0; i < subjects.length; i++) {
       const sub = subjects[i];
       const score = sampleScores[i % sampleScores.length];
 
       // Semester Exam Result
-      await tx.result.create({
-        data: {
-          studentId,
-          subjectId: sub.id,
-          yearLevel,
-          semester: 'Sem1',
-          type: 'sem',
-          subject: sub.name,
-          marks: score.marks,
-          maxMarks: 100,
-          grade: score.grade,
-          gradePoints: score.points,
-        },
+      resultsData.push({
+        studentId,
+        subjectId: sub.id,
+        yearLevel,
+        semester: 'Sem1',
+        type: 'sem',
+        subject: sub.name,
+        marks: score.marks,
+        maxMarks: 100,
+        grade: score.grade,
+        gradePoints: score.points,
       });
 
       // Mid Exam Result
-      await tx.result.create({
-        data: {
-          studentId,
-          subjectId: sub.id,
-          yearLevel,
-          semester: 'Sem1',
-          type: 'mid',
-          subject: sub.name,
-          marks: score.mid,
-          maxMarks: 30,
-          grade: score.grade,
-          gradePoints: score.points,
-        },
+      resultsData.push({
+        studentId,
+        subjectId: sub.id,
+        yearLevel,
+        semester: 'Sem1',
+        type: 'mid',
+        subject: sub.name,
+        marks: score.mid,
+        maxMarks: 30,
+        grade: score.grade,
+        gradePoints: score.points,
       });
 
       // Attendance records
       if (instructor) {
         for (let d = 0; d < recentDates.length; d++) {
           const isPresent = d !== 2; // ~88% attendance
-          await tx.attendance.create({
-            data: {
-              studentId,
-              subjectId: sub.id,
-              facultyId: instructor.facultyId,
-              subject: sub.name,
-              classType: i >= 4 ? 'lab' : 'lecture',
-              date: recentDates[d],
-              status: isPresent ? 'present' : 'absent',
-            },
+          attendanceData.push({
+            studentId,
+            subjectId: sub.id,
+            facultyId: instructor.facultyId,
+            subject: sub.name,
+            classType: i >= 4 ? 'lab' : 'lecture',
+            date: recentDates[d],
+            status: isPresent ? 'present' : 'absent',
           });
         }
       }
+    }
+
+    if (resultsData.length > 0) {
+      await tx.result.createMany({ data: resultsData });
+    }
+
+    if (attendanceData.length > 0) {
+      await tx.attendance.createMany({ data: attendanceData });
     }
 
     // Semester CGPA record
@@ -308,7 +312,7 @@ export async function createStudent(req, res) {
     });
 
     return { ...student, user };
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 
   publishEvent({ type: 'student.created', entity: 'student', entityId: created.studentId, action: 'created', roles: ['admin', 'faculty'] });
 
@@ -396,7 +400,7 @@ export async function createFaculty(req, res) {
     });
 
     return { ...faculty, user };
-  });
+  }, { timeout: 25000, maxWait: 10000 });
 
   publishEvent({ type: 'faculty.created', entity: 'faculty', entityId: created.facultyId, action: 'created', roles: ['admin', 'faculty'] });
 
