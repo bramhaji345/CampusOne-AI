@@ -56,16 +56,13 @@ export async function restoreDatabase() {
   const database = parsedUrl.pathname.replace(/^\//, '').split('?')[0] || 'campusone';
 
   const psqlArgs = [
-    '-h', host,
-    '-p', port,
-    '-U', user,
-    '-d', database,
+    '-d', dbUrl,
     '-v', 'ON_ERROR_STOP=0',
   ];
 
   const env = {
     ...process.env,
-    PGPASSWORD: password,
+    ...(password ? { PGPASSWORD: password } : {}),
   };
 
   return new Promise((resolve, reject) => {

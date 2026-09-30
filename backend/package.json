@@ -16,6 +16,7 @@
     "db:restore": "node scripts/restore-database.mjs",
     "import:workbook": "node scripts/import-source-workbook.mjs",
     "postinstall": "prisma generate",
+    "vercel-build": "prisma generate",
     "test": "node test/excel-import.test.js",
     "seed:campus-data": "node scripts/seed-campus-simulation.mjs"
   },
