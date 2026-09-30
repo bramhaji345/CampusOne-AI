@@ -103,7 +103,13 @@ export default function DashboardLayout({ links, title }) {
             </button>
             <div>
               <strong>{title}</strong>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Welcome, {user?.name} <span className={`sync-status ${syncStatus}`} title={`Live updates ${syncStatus}`}>{syncStatus === 'connected' ? '• Live' : syncStatus === 'offline' ? '• Offline' : '• Reconnecting'}</span></div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                Welcome, {user?.name}
+                <span className={`sync-status ${syncStatus}`} title={`Central DB Sync: ${syncStatus}`}>
+                  <span className="sync-dot" />
+                  {syncStatus === 'connected' ? 'Live' : syncStatus === 'offline' ? 'Offline' : 'Connecting...'}
+                </span>
+              </div>
             </div>
           </div>
 

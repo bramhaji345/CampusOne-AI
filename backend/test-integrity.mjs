@@ -83,6 +83,14 @@ async function testApi() {
   const adminUser = await prisma.user.findFirst({ where: { role: 'admin' } });
   const aPassOk = await bcrypt.compare('Admin@123', adminUser.password);
   console.log(`Admin login Admin@123: ${aPassOk ? 'SUCCESS' : 'FAILED'}`);
+
+  // 5. Test Year-Level Student ID prefixes (E1->O24, E2->O23, E3->O22, E4->O21)
+  console.log('--- Year-Level Class ID Verification ---');
+  for (const [lvl, yr, prefix] of [['E1', 1, 'O24'], ['E2', 2, 'O23'], ['E3', 3, 'O22'], ['E4', 4, 'O21']]) {
+    const list = await prisma.student.findMany({ where: { year: yr }, take: 3, select: { studentId: true } });
+    const allMatch = list.every(s => s.studentId.startsWith(prefix));
+    console.log(`Class ${lvl} (Year ${yr}): sample IDs [${list.map(s => s.studentId).join(', ')}] — startsWith '${prefix}': ${allMatch ? 'VERIFIED' : 'FAILED'}`);
+  }
 }
 
 testApi().catch(console.error).finally(() => prisma.$disconnect());

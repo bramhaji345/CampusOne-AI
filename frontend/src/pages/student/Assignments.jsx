@@ -40,9 +40,27 @@ export default function StudentAssignments() {
           const past = a.due_date && new Date() > new Date(`${a.due_date}T23:59:59`);
           return (
             <div className="panel" key={a.id}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                <h3>{a.title}</h3>
-                <span className={`badge-pill badge-${st === 'pending' ? 'pending' : st === 'late' ? 'late' : 'submitted'}`}>{st}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <h3 style={{ margin: 0 }}>{a.title}</h3>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '3px 10px',
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textTransform: 'capitalize',
+                    letterSpacing: '0.02em',
+                    height: 'fit-content',
+                    whiteSpace: 'nowrap',
+                    background: st === 'pending' ? 'rgba(245, 158, 11, 0.12)' : st === 'late' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                    color: st === 'pending' ? '#d97706' : st === 'late' ? '#ef4444' : '#16a34a',
+                    border: `1px solid ${st === 'pending' ? 'rgba(245, 158, 11, 0.35)' : st === 'late' ? 'rgba(239, 68, 68, 0.35)' : 'rgba(34, 197, 94, 0.35)'}`,
+                  }}
+                >
+                  {st}
+                </span>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: 14, marginBottom: 8 }}>{a.description}</p>
               <p style={{ fontSize: 13 }}><strong>Subject:</strong> {a.subject}</p>

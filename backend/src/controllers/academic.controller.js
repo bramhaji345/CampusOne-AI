@@ -331,7 +331,11 @@ export async function saveMidMarks(req, res) {
   });
   if (!assignment && !legacyAssignments.length) return res.status(403).json({ error: 'You are not assigned to this subject' });
   const targetStudent = await prisma.student.findUnique({ where: { studentId: student_id } });
-  if (!targetStudent || !legacyAssignments.some((row) => row.classId === targetStudent.classId)) return res.status(404).json({ error: 'Student is not in one of your assigned classes for this subject.' });
+  const isClassMatch = legacyAssignments.some((row) => row.classId === targetStudent?.classId);
+  const isDeptMatch = targetStudent?.departmentId === faculty.departmentId || targetStudent?.deptCode === faculty.deptCode;
+  if (!targetStudent || (!isClassMatch && !isDeptMatch && !assignment)) {
+    return res.status(404).json({ error: 'Student is not in one of your assigned classes or department for this subject.' });
+  }
   const existing = await prisma.result.findFirst({
     where: { studentId: student_id, yearLevel: year_level, semester, type: 'mid', subject },
   });

@@ -96,7 +96,9 @@ export default function Login() {
           */}
           <form onSubmit={onSubmit}>
             <div className="form-group">
-              <label htmlFor="campus-username">Campus ID or email</label>
+              <label htmlFor="campus-username">
+                {role === 'student' ? 'Student ID / College ID or Email' : role === 'faculty' ? 'Faculty ID / Employee ID or Email' : 'Administrator Email or ID'}
+              </label>
               <input
                 id="campus-username"
                 name="username"
@@ -106,9 +108,11 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder={
-                  role === 'student' ? 'O240001 or o240001@campusone.edu'
-                  : role === 'faculty' ? 'FAC0001 or fac0001@campusone.edu'
-                  : 'admin@campusone.demo'
+                  role === 'student'
+                    ? 'Enter Student ID (e.g. O240001 or o240001@campusone.edu)'
+                    : role === 'faculty'
+                      ? 'Enter Faculty ID (e.g. FAC0001 or fac0001@campusone.edu)'
+                      : 'Enter Admin Email (e.g. admin@campusone.demo)'
                 }
               />
             </div>
@@ -123,7 +127,13 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="••••••••"
+                  placeholder={
+                    role === 'student'
+                      ? 'Enter Password (e.g. O240001@123)'
+                      : role === 'faculty'
+                        ? 'Enter Password (e.g. FAC0001@123)'
+                        : 'Enter Password (e.g. Admin@123)'
+                  }
                 />
                 <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}

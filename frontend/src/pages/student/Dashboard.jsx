@@ -23,6 +23,7 @@ export default function StudentDashboard() {
   const [att, setAtt] = useState(null);
   const [notifs, setNotifs] = useState([]);
   const [overview, setOverview] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(() => {
@@ -208,17 +209,77 @@ export default function StudentDashboard() {
           ) : <EmptyState title="No semester trend yet" />}
         </div>
         <div className="panel">
-          <h3>Subject performance</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 6 }}>
+            <h3 style={{ margin: 0 }}>Subject performance</h3>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tap or hover bar for subject name</span>
+          </div>
+
+          {selectedSubject && (
+            <div style={{
+              marginTop: 10,
+              marginBottom: 8,
+              padding: '8px 12px',
+              borderRadius: '8px',
+              background: 'var(--bg-soft)',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 6,
+            }}>
+              <strong style={{ fontSize: 13, color: 'var(--text)' }}>{selectedSubject.subject}</strong>
+              <span style={{ fontSize: 13, fontWeight: 700, color: selectedSubject.percentage >= 75 ? '#22c55e' : '#f97316' }}>
+                Score: {selectedSubject.percentage}% ({selectedSubject.percentage >= 75 ? 'Safe / Strong' : 'Focus Needed'})
+              </span>
+            </div>
+          )}
+
           {ai?.subjects?.length ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={ai.subjects.slice(0, 8)}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={ai.subjects.slice(0, 8)} margin={{ top: 12, right: 10, left: -15, bottom: 5 }}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-                <XAxis dataKey="subject" tick={{ fontSize: 9 }} interval={0} angle={-18} textAnchor="end" height={58} />
+                <XAxis dataKey="subject" tick={false} axisLine={{ stroke: 'var(--chart-grid)' }} height={10} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v) => [`${v}%`, 'Score']} />
-                <Bar dataKey="percentage" radius={[8, 8, 0, 0]}>
+                <Tooltip
+                  cursor={{ fill: 'var(--bg-soft)', opacity: 0.6 }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div style={{
+                          background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border)',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 14px rgba(0,0,0,0.18)',
+                          maxWidth: 240,
+                        }}>
+                          <strong style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--text)', lineHeight: 1.3 }}>
+                            {item.subject}
+                          </strong>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: item.percentage >= 75 ? '#22c55e' : '#f97316' }}>
+                            Score: {item.percentage}% ({item.percentage >= 75 ? 'Safe / Strong' : 'Focus Needed'})
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar
+                  dataKey="percentage"
+                  radius={[8, 8, 0, 0]}
+                  onClick={(entry) => setSelectedSubject(entry)}
+                  cursor="pointer"
+                >
                   {ai.subjects.slice(0, 8).map((entry) => (
-                    <Cell key={entry.subject} fill={entry.percentage >= 75 ? 'var(--chart-primary)' : '#f97316'} />
+                    <Cell
+                      key={entry.subject}
+                      fill={entry.percentage >= 75 ? 'var(--chart-primary)' : '#f97316'}
+                      stroke={selectedSubject?.subject === entry.subject ? '#fff' : 'none'}
+                      strokeWidth={2}
+                    />
                   ))}
                 </Bar>
               </BarChart>

@@ -30,6 +30,7 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('token');
     (remember ? localStorage : sessionStorage).setItem('token', data.token);
     setUser(data.user);
+    window.dispatchEvent(new CustomEvent('campus:auth-changed', { detail: { loggedIn: true, token: data.token } }));
     return data.user;
   };
 
@@ -37,6 +38,7 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     setUser(null);
+    window.dispatchEvent(new CustomEvent('campus:auth-changed', { detail: { loggedIn: false } }));
   };
 
   return (

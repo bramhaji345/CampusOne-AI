@@ -18,7 +18,8 @@ async function getDepartment(code) {
 }
 
 export async function listStudents(req, res) {
-  const { dept, section, subject } = req.query;
+  const { dept, section, subject, year, year_level, entry_level } = req.query;
+  const parsedYear = Number(year) || (year_level ? Number(String(year_level).replace(/\D/g, '')) : (entry_level ? Number(String(entry_level).replace(/\D/g, '')) : null));
   let assignedClassIds;
   if (req.user.role === 'faculty') {
     const faculty = await prisma.faculty.findUnique({ where: { userId: req.user.id } });
@@ -28,13 +29,20 @@ export async function listStudents(req, res) {
       select: { classId: true },
     });
     assignedClassIds = [...new Set(assignments.map((row) => row.classId))];
-    if (!assignedClassIds.length) return res.json([]);
+    if (!assignedClassIds.length) {
+      const deptClasses = await prisma.class.findMany({
+        where: { batch: { course: { departmentId: faculty.departmentId } } },
+        select: { id: true },
+      });
+      assignedClassIds = deptClasses.map((c) => c.id);
+    }
   }
   const rows = await prisma.student.findMany({
     where: {
-      ...(assignedClassIds ? { classId: { in: assignedClassIds } } : {}),
+      ...(assignedClassIds?.length ? { classId: { in: assignedClassIds } } : {}),
       ...(dept ? { deptCode: dept } : {}),
       ...(section ? { section } : {}),
+      ...(parsedYear ? { year: parsedYear } : {}),
     },
     include: { user: true },
     orderBy: { studentId: 'asc' },
