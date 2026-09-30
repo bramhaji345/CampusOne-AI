@@ -29,7 +29,25 @@ export async function listStudents(req, res) {
       select: { classId: true },
     });
     assignedClassIds = [...new Set(assignments.map((row) => row.classId))];
-    if (!assignedClassIds.length) {
+    if (parsedYear) {
+      const matchInAssigned = assignedClassIds.length ? await prisma.student.count({
+        where: { classId: { in: assignedClassIds }, year: parsedYear },
+      }) : 0;
+      if (matchInAssigned === 0) {
+        const deptClasses = await prisma.class.findMany({
+          where: {
+            batch: {
+              yearLevel: `E${parsedYear}`,
+              course: { departmentId: faculty.departmentId },
+            },
+          },
+          select: { id: true },
+        });
+        if (deptClasses.length > 0) {
+          assignedClassIds = deptClasses.map((c) => c.id);
+        }
+      }
+    } else if (!assignedClassIds.length) {
       const deptClasses = await prisma.class.findMany({
         where: { batch: { course: { departmentId: faculty.departmentId } } },
         select: { id: true },
