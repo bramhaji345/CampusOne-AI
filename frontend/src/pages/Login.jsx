@@ -1,40 +1,42 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  BrainCircuit,
+  ChartNoAxesCombined,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Sparkles,
+} from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
-import { BrainCircuit, ChartNoAxesCombined, CheckCircle2, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 function loginErrorMessage(err) {
-  const apiError = err.response?.data?.error;
-  if (apiError) return apiError;
-  if (!err.response) {
-    return 'Cannot reach the campus server. Start the backend on port 5000, then try again.';
+  if (err.response?.data?.error) return err.response.data.error;
+  if (err.message?.includes('Network Error')) {
+    return 'Cannot reach backend service. Check connection or try again in a few moments.';
   }
-  return 'Login failed. Check your portal and credentials.';
+  return 'Sign in failed. Check your ID and password.';
 }
 
 export default function Login() {
-  const [role, setRole] = useState('student');
+  const [params] = useSearchParams();
+  const [role, setRole] = useState(params.get('role') || 'student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [remember, setRemember] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const choosePortal = (r) => {
-    setRole(r);
+  const choosePortal = (nextRole) => {
+    setRole(nextRole);
+    setError('');
     setEmail('');
     setPassword('');
   };
-
-  const credentialHint = role === 'student'
-    ? 'Student ID (e.g. O240001) · Password: O240001@123'
-    : role === 'faculty'
-      ? 'Faculty ID (e.g. FAC0001) · Password: FAC0001@123'
-      : 'Email: admin@campusone.demo · Password: Admin@123';
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -42,7 +44,7 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email.trim(), password, role, { remember });
-      // navigate triggers, browser detects successful form submission and offers to save credentials
+      // Navigate triggers; browser detects successful form submission and offers to save credentials
       navigate(`/${user.role}`);
     } catch (err) {
       setError(loginErrorMessage(err));
@@ -54,7 +56,12 @@ export default function Login() {
   return (
     <div className="auth-page campus-login">
       <div className="auth-visual">
-        <div className="login-atmosphere" aria-hidden="true"><span className="login-light login-light-one" /><span className="login-light login-light-two" /><span className="login-network" /><i /><i /><i /><i /><i /></div>
+        <div className="login-atmosphere" aria-hidden="true">
+          <span className="login-light login-light-one" />
+          <span className="login-light login-light-two" />
+          <span className="login-network" />
+          <i /><i /><i /><i /><i />
+        </div>
         <Logo />
         <div className="auth-copy">
           <div className="kicker"><Sparkles size={14} /> AI-powered campus intelligence</div>
@@ -71,6 +78,7 @@ export default function Login() {
         <div className="auth-orb" aria-hidden="true" />
         <p className="login-legal">Secure access for your campus community</p>
       </div>
+
       <div className="auth-form-wrap">
         <div className="auth-card">
           <Logo size={44} />
@@ -85,9 +93,7 @@ export default function Login() {
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, background: 'var(--surface-2)', padding: '6px 10px', borderRadius: 6 }}>
-            💡 {credentialHint}
-          </p>
+
           {error && <div className="error-msg">{error}</div>}
 
           {/*
@@ -97,7 +103,7 @@ export default function Login() {
           <form onSubmit={onSubmit}>
             <div className="form-group">
               <label htmlFor="campus-username">
-                {role === 'student' ? 'Student ID / College ID or Email' : role === 'faculty' ? 'Faculty ID / Employee ID or Email' : 'Administrator Email or ID'}
+                {role === 'student' ? 'College ID or Email' : role === 'faculty' ? 'Faculty ID or Email' : 'Administrator Email'}
               </label>
               <input
                 id="campus-username"
@@ -109,10 +115,10 @@ export default function Login() {
                 required
                 placeholder={
                   role === 'student'
-                    ? 'Enter Student ID (e.g. O240001 or o240001@campusone.edu)'
+                    ? 'O22XXXX or student@campusone.edu'
                     : role === 'faculty'
-                      ? 'Enter Faculty ID (e.g. FAC0001 or fac0001@campusone.edu)'
-                      : 'Enter Admin Email (e.g. admin@campusone.demo)'
+                      ? 'FACXXXX or faculty@campusone.edu'
+                      : 'admin@campusone.demo'
                 }
               />
             </div>
@@ -129,10 +135,10 @@ export default function Login() {
                   required
                   placeholder={
                     role === 'student'
-                      ? 'Enter Password (e.g. O240001@123)'
+                      ? 'O22XXXX@123'
                       : role === 'faculty'
-                        ? 'Enter Password (e.g. FAC0001@123)'
-                        : 'Enter Password (e.g. Admin@123)'
+                        ? 'FACXXXX@123'
+                        : '••••••••'
                   }
                 />
                 <button type="button" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
@@ -149,15 +155,10 @@ export default function Login() {
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               <span>Keep me signed in on this device</span>
             </label>
-            <button className="btn btn-primary" style={{ width: '100%' }} disabled={loading} type="submit">
-              {loading ? 'Signing in…' : 'Sign In'}
+            <button className="btn btn-primary" type="submit" disabled={loading} style={{ width: '100%', marginTop: 14 }}>
+              {loading ? 'Signing in…' : `Sign in as ${role}`}
             </button>
           </form>
-
-          <p style={{ marginTop: 16, textAlign: 'center', fontSize: 14 }}>
-            <span className="institution-access">Accounts are provided by your institution.</span><br />
-            <Link to="/" style={{ color: 'var(--text-muted)' }}>← Back to home</Link>
-          </p>
         </div>
       </div>
     </div>
