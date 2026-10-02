@@ -4,6 +4,8 @@ let initError = null;
 try {
   const mod = await import('../src/app.js');
   app = mod.default;
+  const { ensureExGrades } = await import('../src/config/prisma.js');
+  ensureExGrades().catch(() => {});
 } catch (err) {
   initError = err;
   console.error('Failed to load CampusOne Express app:', err);

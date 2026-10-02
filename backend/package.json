@@ -17,7 +17,7 @@
     "import:workbook": "node scripts/import-source-workbook.mjs",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate",
-    "test": "node test/excel-import.test.js",
+    "test": "node test/excel-import.test.js && node test/grade-boundaries.test.js",
     "seed:campus-data": "node scripts/seed-campus-simulation.mjs"
   },
   "prisma": {

@@ -64,7 +64,7 @@ export async function seedDatabase() {
           subjects.forEach((subj, i) => {
             const marks = type === 'mid' ? 18 + Math.floor(Math.random() * 12) : 65 + Math.floor(Math.random() * 30);
             const max = type === 'mid' ? 30 : 100;
-            const grade = marks / max >= 0.9 ? 'A+' : marks / max >= 0.8 ? 'A' : marks / max >= 0.7 ? 'B' : marks / max >= 0.6 ? 'C' : 'D';
+            const grade = marks / max >= 0.9 ? 'Ex' : marks / max >= 0.8 ? 'A' : marks / max >= 0.7 ? 'B' : marks / max >= 0.6 ? 'C' : 'D';
             run(
               `INSERT INTO results (id, student_id, year_level, semester, type, subject, marks, max_marks, grade) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [uuid(), student.sid, yl, sem, type, subj, marks, max, grade]

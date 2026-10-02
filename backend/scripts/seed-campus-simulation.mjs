@@ -7,7 +7,7 @@ const SIMULATED = 'SYNTHETIC RANDOM SIMULATION';
 const chunk = (rows, size = 1000) => Array.from({ length: Math.ceil(rows.length / size) }, (_, i) => rows.slice(i * size, (i + 1) * size));
 const key = (...values) => `sim_${createHash('sha1').update(values.join('|')).digest('hex').slice(0, 32)}`;
 const integer = (seed, min, max) => min + (parseInt(createHash('sha256').update(seed).digest('hex').slice(0, 8), 16) % (max - min + 1));
-const grade = (points) => points >= 9.5 ? 'A+' : points >= 8.5 ? 'A' : points >= 7.5 ? 'B+' : points >= 6.5 ? 'B' : points >= 5.5 ? 'C' : 'D';
+const grade = (points) => points >= 9.0 ? 'Ex' : points >= 8.0 ? 'A' : points >= 7.5 ? 'B+' : points >= 6.5 ? 'B' : points >= 5.5 ? 'C' : 'D';
 const room = (branch, section, period) => `${branch}-${section}-${100 + period}`;
 const slots = ['09:00-10:00', '10:00-11:00', '11:15-12:15', '12:15-13:15', '14:00-15:00', '15:00-16:00'];
 const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];

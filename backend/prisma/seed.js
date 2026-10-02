@@ -30,7 +30,7 @@ const SLOTS = ['09:00-10:00', '10:00-11:00', '11:15-12:15', '13:15-14:15', '14:1
 function pick(arr, i) { return arr[i % arr.length]; }
 function grade(marks, max) {
   const r = marks / max;
-  return r >= 0.9 ? 'A+' : r >= 0.8 ? 'A' : r >= 0.7 ? 'B' : r >= 0.6 ? 'C' : 'D';
+  return r >= 0.9 ? 'Ex' : r >= 0.8 ? 'A' : r >= 0.7 ? 'B' : r >= 0.6 ? 'C' : 'D';
 }
 function gp(marks, max) {
   const p = (marks / max) * 100;

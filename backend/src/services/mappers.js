@@ -56,6 +56,10 @@ export async function getFacultyProfile(userId) {
 }
 
 export function serializeResult(r) {
+  const marks = Number(r.marks);
+  const max = Number(r.maxMarks || 100);
+  const isEx = max > 0 && (marks / max) * 100 >= 90;
+  const grade = isEx ? 'Ex' : (r.grade === 'EX' ? 'Ex' : r.grade);
   return {
     id: r.id,
     student_id: r.studentId,
@@ -65,7 +69,7 @@ export function serializeResult(r) {
     subject: r.subject,
     marks: r.marks,
     max_marks: r.maxMarks,
-    grade: r.grade,
+    grade,
     grade_points: r.gradePoints,
   };
 }
@@ -160,11 +164,11 @@ export function serializeTimetable(t) {
 }
 
 export function gradeFor(marks, max) {
-  const ratio = Number(marks) / Number(max || 100);
-  if (ratio >= 0.9) return 'A+';
-  if (ratio >= 0.8) return 'A';
-  if (ratio >= 0.7) return 'B';
-  if (ratio >= 0.6) return 'C';
+  const pct = (Number(marks) / Number(max || 100)) * 100;
+  if (pct >= 90) return 'Ex';
+  if (pct >= 80) return 'A';
+  if (pct >= 70) return 'B';
+  if (pct >= 60) return 'C';
   return 'D';
 }
 

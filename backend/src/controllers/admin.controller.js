@@ -219,7 +219,7 @@ export async function createStudent(req, res) {
     const sampleScores = [
       { marks: 85, mid: 26, grade: 'A', points: 9 },
       { marks: 78, mid: 24, grade: 'B+', points: 8 },
-      { marks: 92, mid: 28, grade: 'A+', points: 10 },
+      { marks: 92, mid: 28, grade: 'Ex', points: 10 },
       { marks: 88, mid: 27, grade: 'A', points: 9 },
       { marks: 75, mid: 22, grade: 'B', points: 7 },
       { marks: 82, mid: 25, grade: 'A', points: 8 },

@@ -109,7 +109,7 @@ export async function listResults(req, res) {
         course_code: row.subject.code,
         marks: row.marks,
         max_marks: 100,
-        grade: row.grade,
+        grade: (row.marks != null && Number(row.marks) >= 90) || row.grade === 'EX' ? 'Ex' : row.grade,
         grade_points: row.gradePoint,
         credit_points: row.creditPoints,
         credits: row.credits,
