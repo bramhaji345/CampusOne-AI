@@ -19,13 +19,28 @@ function gradeColor(grade) {
 
 export default function StudentResults() {
   const { user } = useAuth();
-  const [year, setYear] = useState(`E${user?.year || 1}`);
-  const [sem, setSem] = useState('1');
+  const maxYear = user?.year || 1;
+  const currentTermSem = user?.semester || 1;
+  const allowedYears = Array.from({ length: maxYear }, (_, i) => `E${i + 1}`);
+
+  const [year, setYear] = useState(`E${maxYear}`);
+  const selectedYearNum = Number(year.replace(/\D/g, '')) || 1;
+  const maxSemForSelectedYear = selectedYearNum < maxYear ? 2 : currentTermSem;
+  const allowedSems = Array.from({ length: maxSemForSelectedYear }, (_, i) => String(i + 1));
+
+  const [sem, setSem] = useState(String(Math.min(Number(currentTermSem), maxSemForSelectedYear)));
   const [type, setType] = useState('sem');
   const [rows, setRows] = useState([]);
   const [compact, setCompact] = useState(true);
   const [loading, setLoading] = useState(true);
   const [cgpaData, setCgpaData] = useState([]);
+
+  // Adjust sem if selected year changes and sem is no longer authorized
+  useEffect(() => {
+    if (!allowedSems.includes(sem)) {
+      setSem(allowedSems[allowedSems.length - 1] || '1');
+    }
+  }, [year, allowedSems, sem]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -81,11 +96,10 @@ export default function StudentResults() {
       <div className="panel no-print">
         <div className="filters">
           <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
-            {['E1', 'E2', 'E3', 'E4'].map((y) => <option key={y} value={y}>{y}</option>)}
+            {allowedYears.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <select value={sem} onChange={(e) => setSem(e.target.value)} aria-label="Semester">
-            <option value="1">Semester 1</option>
-            <option value="2">Semester 2</option>
+            {allowedSems.map((s) => <option key={s} value={s}>Semester {s}</option>)}
           </select>
           <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Exam type">
             <option value="sem">Semester marks</option>

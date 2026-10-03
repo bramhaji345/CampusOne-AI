@@ -184,6 +184,7 @@ model Student {
   studentId   String  @unique @map("student_id")
   dormNo      String? @map("dorm_no")
   year        Int
+  semester    Int      @default(1)
   parentName  String? @map("parent_name")
   mobile      String?
   parentPhone String? @map("parent_phone")

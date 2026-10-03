@@ -7,6 +7,14 @@ import {
   gradePointsFor,
   refreshStudentCgpa,
 } from '../services/mappers.js';
+import {
+  getStudentAcademicLevel,
+  isAcademicTermAuthorized,
+  buildAuthorizedResultWhere,
+  calculateAuthorizedStudentCgpa,
+  filterAuthorizedAttendance,
+  parseYearLevel,
+} from '../services/academic-auth.js';
 import { localISODate } from '../services/dates.js';
 
 function buildInsights(student, trend, subjects) {
@@ -49,35 +57,25 @@ function buildInsights(student, trend, subjects) {
   };
 }
 
-/**
- * Build all variants of a semester string for flexible querying.
- * E.g. "Sem1" → ["Sem1", "1", "S1"]
- *      "1"    → ["1", "Sem1", "S1"]
- */
-function semVariants(semester) {
-  if (!semester) return [];
-  const s = String(semester).trim();
-  const num = s.replace(/^(Sem|S)/i, '');
-  const variants = new Set();
-  variants.add(s);              // as-is: "Sem1", "1", "S1"
-  variants.add(`Sem${num}`);    // "Sem1"
-  variants.add(num);            // "1"
-  variants.add(`S${num}`);      // "S1"
-  return [...variants].filter(Boolean);
-}
-
 export async function listResults(req, res) {
+  // 1. Authenticated student is the sole source of authorization
   const student = await getStudentProfile(req.user.id);
+  const authLevel = getStudentAcademicLevel(student);
+
   const { year_level, semester, type } = req.query;
-  const semValues = semVariants(semester);
+
+  // 2. Build strictly authorized Prisma where conditions
+  const where = buildAuthorizedResultWhere(authLevel, { year_level, semester, type });
+  if (!where) {
+    // Requested term is in the future or outside authorized boundary -> strictly blocked
+    return res.json([]);
+  }
 
   if (type !== 'mid') {
-    // 1. Try simulated results first (fast path for simulation data)
+    // 3. Simulated results path (strictly filtered by authorized where)
     const simulatedRows = await prisma.result.findMany({
       where: {
-        studentId: student.student_id,
-        ...(year_level ? { yearLevel: year_level } : {}),
-        ...(semValues.length ? { semester: { in: semValues } } : {}),
+        ...where,
         type: 'sem',
         id: { startsWith: 'sim_' },
       },
@@ -85,50 +83,61 @@ export async function listResults(req, res) {
     });
     if (simulatedRows.length) return res.json(simulatedRows.map(serializeResult));
 
-    // 2. Try studentCourseRecord (imported from Excel Student_Academic_Record)
+    // 4. Try studentCourseRecord with strict academic authorization filtering
     const courseRecords = await prisma.studentCourseRecord.findMany({
-      where: {
-        studentId: student.student_id,
-        ...(semValues.length ? { semester: { in: semValues } } : {}),
-      },
-      include: { subject: true },
+      where: { studentId: student.student_id },
+      include: { subject: { include: { offerings: true } } },
       orderBy: [{ semester: 'asc' }, { subject: { name: 'asc' } }],
     });
-    if (courseRecords.length) {
-      // Determine the year_level from the student record if query doesn't specify
-      const level = year_level || `E${student.year || 1}`;
-      // Filter by year_level if requested (approximate via student year or cgpa records)
-      return res.json(courseRecords.map((row) => ({
-        id: row.id,
-        student_id: row.studentId,
-        subject_id: row.subjectId,
-        year_level: level,
-        semester: row.semester,
-        type: 'sem',
-        subject: row.subject.name,
-        course_code: row.subject.code,
-        marks: row.marks,
-        max_marks: 100,
-        grade: (row.marks != null && Number(row.marks) >= 90) || row.grade === 'EX' ? 'Ex' : row.grade,
-        grade_points: row.gradePoint,
-        credit_points: row.creditPoints,
-        credits: row.credits,
-        result_status: row.resultStatus,
-        curriculum_scope: row.curriculumScope,
-        source_status: row.sourceStatus,
-        academic_year: row.academicYear,
-      })));
+
+    const authorizedCourseRecords = courseRecords.filter((row) => {
+      const entryLevel = row.subject?.entryLevel || row.subject?.offerings?.[0]?.entryLevel || `E${student.year}`;
+      const sem = row.semester;
+      if (!isAcademicTermAuthorized(authLevel, entryLevel, sem)) return false;
+
+      if (year_level != null) {
+        const reqY = parseYearLevel(year_level);
+        const rowY = parseYearLevel(entryLevel);
+        if (reqY !== rowY) return false;
+      }
+      if (semester != null && String(semester).trim() !== '') {
+        const reqDigits = String(semester).replace(/\D/g, '');
+        const rowDigits = String(sem).replace(/\D/g, '');
+        if (reqDigits && rowDigits && reqDigits !== rowDigits) return false;
+      }
+      return true;
+    });
+
+    if (authorizedCourseRecords.length) {
+      return res.json(authorizedCourseRecords.map((row) => {
+        const level = row.subject?.entryLevel || `E${student.year || 1}`;
+        return {
+          id: row.id,
+          student_id: row.studentId,
+          subject_id: row.subjectId,
+          year_level: level,
+          semester: row.semester,
+          type: 'sem',
+          subject: row.subject?.name,
+          course_code: row.subject?.code,
+          marks: row.marks,
+          max_marks: 100,
+          grade: (row.marks != null && Number(row.marks) >= 90) || row.grade === 'EX' ? 'Ex' : row.grade,
+          grade_points: row.gradePoint,
+          credit_points: row.creditPoints,
+          credits: row.credits,
+          result_status: row.resultStatus,
+          curriculum_scope: row.curriculumScope,
+          source_status: row.sourceStatus,
+          academic_year: row.academicYear,
+        };
+      }));
     }
   }
 
-  // 3. Fall back to result table (mid marks, or non-simulated sem marks)
+  // 5. Fall back to result table (mid marks, or non-simulated sem marks)
   const rows = await prisma.result.findMany({
-    where: {
-      studentId: student.student_id,
-      ...(year_level ? { yearLevel: year_level } : {}),
-      ...(semValues.length ? { semester: { in: semValues } } : {}),
-      ...(type ? { type } : {}),
-    },
+    where,
     orderBy: { subject: 'asc' },
   });
   res.json(rows.map(serializeResult));
@@ -136,64 +145,83 @@ export async function listResults(req, res) {
 
 export async function aiResults(req, res) {
   const student = await getStudentProfile(req.user.id);
-  const cgpaRows = await prisma.semesterCgpa.findMany({
-    where: { studentId: student.student_id },
-    orderBy: [{ yearLevel: 'asc' }, { semester: 'asc' }],
-  });
-  let trend = cgpaRows.map((r) => ({
-    label: `${r.yearLevel} Sem${r.semester.replace(/^(Sem|S)/i, '')}`,
-    gpa: Math.round(r.gpa * 100) / 100,
-  }));
-  if (!trend.length) {
-    const grouped = await prisma.result.groupBy({
-      by: ['yearLevel', 'semester'],
-      where: { studentId: student.student_id, type: 'sem' },
+  const authLevel = getStudentAcademicLevel(student);
+
+  // 1. Calculate authorized CGPA and trend strictly within authorized academic boundary
+  const { cgpa, trend } = await calculateAuthorizedStudentCgpa(student.student_id, authLevel);
+
+  // 2. Aggregate subjects strictly within authorized results
+  const resultWhere = buildAuthorizedResultWhere(authLevel, { type: 'sem' });
+  let subjects = [];
+
+  if (resultWhere) {
+    const subjectGroups = await prisma.result.groupBy({
+      by: ['subject'],
+      where: resultWhere,
       _avg: { marks: true, maxMarks: true },
     });
-    trend = grouped
-      .sort((a, b) => `${a.yearLevel}${a.semester}`.localeCompare(`${b.yearLevel}${b.semester}`))
-      .map((r) => ({
-        label: `${r.yearLevel} Sem${r.semester.replace(/^(Sem|S)/i, '')}`,
-        gpa: Math.round(((r._avg.marks || 0) / (r._avg.maxMarks || 100)) * 10 * 100) / 100,
-      }));
-  }
-  const simulated = cgpaRows.some((row) => row.sourceStatus === 'SYNTHETIC RANDOM SIMULATION');
-  const subjectGroups = await prisma.result.groupBy({
-    by: ['subject'],
-    where: { studentId: student.student_id, type: 'sem', ...(simulated ? { id: { startsWith: 'sim_' } } : {}) },
-    _avg: { marks: true, maxMarks: true },
-  });
-  // Also aggregate from course records if no results
-  let subjects = subjectGroups.map((s) => ({
-    subject: s.subject,
-    percentage: Math.round(((s._avg.marks || 0) / (s._avg.maxMarks || 100)) * 1000) / 10,
-  }));
-  if (!subjects.length) {
-    const cr = await prisma.studentCourseRecord.groupBy({
-      by: ['subjectId'],
-      where: { studentId: student.student_id },
-      _avg: { marks: true },
-    });
-    const subjectNames = await prisma.subject.findMany({ where: { id: { in: cr.map((r) => r.subjectId) } }, select: { id: true, name: true } });
-    const nameMap = new Map(subjectNames.map((s) => [s.id, s.name]));
-    subjects = cr.map((r) => ({
-      subject: nameMap.get(r.subjectId) || r.subjectId,
-      percentage: Math.round(((r._avg.marks || 0) / 100) * 1000) / 10,
+    subjects = subjectGroups.map((s) => ({
+      subject: s.subject,
+      percentage: Math.round(((s._avg.marks || 0) / (s._avg.maxMarks || 100)) * 1000) / 10,
     })).sort((a, b) => b.percentage - a.percentage);
   }
-  res.json(buildInsights(student, trend, subjects));
+
+  // Fallback to authorized course records if no result groups
+  if (!subjects.length) {
+    const courseRecords = await prisma.studentCourseRecord.findMany({
+      where: { studentId: student.student_id },
+      include: { subject: { include: { offerings: true } } },
+    });
+    const authorizedCr = courseRecords.filter((row) => {
+      const entryLevel = row.subject?.entryLevel || row.subject?.offerings?.[0]?.entryLevel || `E${student.year}`;
+      return isAcademicTermAuthorized(authLevel, entryLevel, row.semester);
+    });
+
+    const subMap = new Map();
+    for (const r of authorizedCr) {
+      const name = r.subject?.name || r.subjectId;
+      if (!subMap.has(name)) subMap.set(name, { total: 0, count: 0 });
+      const item = subMap.get(name);
+      item.total += Number(r.marks || 0);
+      item.count += 1;
+    }
+    subjects = [...subMap.entries()].map(([name, data]) => ({
+      subject: name,
+      percentage: Math.round((data.total / (data.count || 1)) * 10) / 10,
+    })).sort((a, b) => b.percentage - a.percentage);
+  }
+
+  res.json(buildInsights({ ...student, cgpa }, trend, subjects));
 }
 
 export async function getAttendance(req, res) {
   if (req.user.role === 'student') {
     const student = await getStudentProfile(req.user.id);
+    const authLevel = getStudentAcademicLevel(student);
     const rows = await prisma.attendance.findMany({
       where: { studentId: student.student_id },
+      include: {
+        subjectRel: {
+          include: { offerings: true },
+        },
+      },
       orderBy: { date: 'desc' },
     });
+    const authorizedRows = filterAuthorizedAttendance(rows, authLevel);
+
+    if (!authorizedRows.length) {
+      return res.json({
+        records: [],
+        summary: [],
+        overall: 0,
+        status: 'NOT_AVAILABLE',
+        trend: [],
+      });
+    }
+
     const bySubject = {};
     const byDate = {};
-    rows.forEach((r) => {
+    authorizedRows.forEach((r) => {
       if (!bySubject[r.subject]) bySubject[r.subject] = { present: 0, total: 0 };
       bySubject[r.subject].total++;
       if (r.status === 'present') bySubject[r.subject].present++;
@@ -216,7 +244,7 @@ export async function getAttendance(req, res) {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-14)
       .map(([date, v]) => ({ date, percentage: Math.round((v.present / v.total) * 1000) / 10 }));
-    return res.json({ records: rows.slice(0, 50).map(serializeAttendance), summary, overall, trend });
+    return res.json({ records: authorizedRows.slice(0, 50).map(serializeAttendance), summary, overall, trend });
   }
   if (req.user.role === 'faculty') {
     const faculty = await prisma.faculty.findUnique({ where: { userId: req.user.id } });
@@ -290,26 +318,33 @@ export async function saveAttendance(req, res) {
 
 export async function aiAttendance(req, res) {
   const student = await getStudentProfile(req.user.id);
-  const grouped = await prisma.attendance.groupBy({
-    by: ['subject', 'status'],
+  const authLevel = getStudentAcademicLevel(student);
+  const rows = await prisma.attendance.findMany({
     where: { studentId: student.student_id },
-    _count: true,
+    include: {
+      subjectRel: {
+        include: { offerings: true },
+      },
+    },
   });
+  const authorizedRows = filterAuthorizedAttendance(rows, authLevel);
+
   const map = {};
-  grouped.forEach((g) => {
-    const n = typeof g._count === 'number' ? g._count : g._count?._all || 0;
-    if (!map[g.subject]) map[g.subject] = { present: 0, total: 0 };
-    map[g.subject].total += n;
-    if (g.status === 'present') map[g.subject].present += n;
+  authorizedRows.forEach((r) => {
+    if (!map[r.subject]) map[r.subject] = { present: 0, total: 0 };
+    map[r.subject].total += 1;
+    if (r.status === 'present') map[r.subject].present += 1;
   });
   const summary = Object.entries(map).map(([subject, v]) => ({
     subject,
     percentage: Math.round((v.present / v.total) * 1000) / 10,
   }));
   const atRisk = summary.filter((s) => s.percentage < 75);
-  const insight = atRisk.length === 0
-    ? 'Attendance is healthy across subjects. Keep this consistency.'
-    : `Attention needed in: ${atRisk.map((l) => l.subject).join(', ')}. Aim for 75%+ to stay eligible for exams.`;
+  const insight = summary.length === 0
+    ? 'No attendance records available for current semester.'
+    : atRisk.length === 0
+      ? 'Attendance is healthy across subjects. Keep this consistency.'
+      : `Attention needed in: ${atRisk.map((l) => l.subject).join(', ')}. Aim for 75%+ to stay eligible for exams.`;
   res.json({ summary, insight, atRisk });
 }
 

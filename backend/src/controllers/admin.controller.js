@@ -102,6 +102,8 @@ export async function adminStudents(req, res) {
     ...s, student_id: s.studentId, dorm_no: s.dormNo, course: s.courseName, dept: s.deptCode,
     parent_name: s.parentName, parent_phone: s.parentPhone, name: s.user.name,
     email: s.user.email, photo: s.user.photo,
+    semester: s.semester || 1,
+    cohort: `E${s.year}`,
   })), page, limit, total, pages: Math.ceil(total / limit) });
 }
 
@@ -140,6 +142,33 @@ export async function adminFaculty(req, res) {
 }
 
 export async function facultyList(req, res) {
+  if (req.user?.role === 'student') {
+    const student = await getStudentProfile(req.user.id);
+    const rows = await prisma.faculty.findMany({
+      where: {
+        active: true,
+        OR: [
+          { deptCode: student.dept },
+          { departmentId: student.departmentId },
+          {
+            facultySubjects: {
+              some: {
+                class: { students: { some: { studentId: student.student_id } } },
+              },
+            },
+          },
+        ],
+      },
+      include: { user: true },
+    });
+    return res.json(rows.map((f) => ({
+      faculty_id: f.facultyId,
+      dept: f.deptCode,
+      subjects: f.subjectsText,
+      name: f.user.name,
+    })));
+  }
+
   const rows = await prisma.faculty.findMany({ include: { user: true } });
   res.json(rows.map((f) => ({
     faculty_id: f.facultyId,
@@ -195,6 +224,7 @@ export async function createStudent(req, res) {
         studentId: studentId,
         dormNo: dorm_no || null,
         year: Number(year || 1),
+        semester: Number(req.body.semester || 1),
         parentName: parent_name || null,
         mobile: mobile || null,
         parentPhone: parent_phone || null,
@@ -542,6 +572,7 @@ export async function updateStudent(req, res) {
   if (body.cgpa !== undefined) studentData.cgpa = Number(body.cgpa);
   if (body.active !== undefined) studentData.active = Boolean(body.active);
   if (body.year !== undefined) studentData.year = Number(body.year);
+  if (body.semester !== undefined) studentData.semester = Number(body.semester);
   if (body.dept !== undefined || body.year !== undefined || body.section !== undefined) {
     const department = body.dept === undefined ? await prisma.department.findUnique({ where: { id: current.departmentId } }) : await getDepartment(body.dept);
     const course = await prisma.course.findFirst({ where: { departmentId: department.id, name: current.courseName } })

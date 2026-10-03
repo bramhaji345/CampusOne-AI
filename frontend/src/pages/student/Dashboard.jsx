@@ -64,7 +64,7 @@ export default function StudentDashboard() {
     <div>
       <div className="page-title">
         <h1>Hello, {user?.name?.split(' ')[0]}</h1>
-        <p>{user?.student_id} · {user?.course} · Year {user?.year} · {user?.dept} · Section {user?.section}</p>
+        <p>{user?.student_id} · {user?.course} · Year {user?.year} ({user?.cohort || `E${user?.year}`}) · Semester {user?.semester || 1} · {user?.dept} · Section {user?.section}</p>
       </div>
 
       <div className="stats-grid">

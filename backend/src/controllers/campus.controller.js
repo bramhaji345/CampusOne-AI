@@ -9,18 +9,37 @@ import {
   serializeOutpass,
   serializeTimetable,
 } from '../services/mappers.js';
+import {
+  getStudentAcademicLevel,
+  isAcademicTermAuthorized,
+} from '../services/academic-auth.js';
 
 const PRIORITY = { urgent: 1, medical: 2, event: 3, personal: 4, other: 5 };
 
 export async function listTimetable(req, res) {
   if (req.user.role === 'student') {
     const student = await getStudentProfile(req.user.id);
-    const owner = `${student.dept}-${student.section}-E${student.year}`;
+    const authLevel = getStudentAcademicLevel(student);
+    const owner = `${student.dept}-${student.section}-E${authLevel.year}`;
     const rows = await prisma.timetable.findMany({
       where: { roleOwner: 'student', ownerId: { in: [owner, `${student.dept}-${student.section}`] } },
+      include: {
+        subjectRel: {
+          include: { offerings: true },
+        },
+      },
       orderBy: { period: 'asc' },
     });
-    return res.json(rows.map(serializeTimetable));
+    const authorizedRows = rows.filter((r) => {
+      if (!r.subjectRel) return true;
+      const entryLevel = r.subjectRel.entryLevel || r.subjectRel.offerings?.[0]?.entryLevel;
+      const semester = r.subjectRel.semester || r.subjectRel.offerings?.[0]?.semester;
+      if (entryLevel && !isAcademicTermAuthorized(authLevel, entryLevel, semester)) {
+        return false;
+      }
+      return true;
+    });
+    return res.json(authorizedRows.map(serializeTimetable));
   }
   if (req.user.role === 'faculty') {
     const faculty = await getFacultyProfile(req.user.id);

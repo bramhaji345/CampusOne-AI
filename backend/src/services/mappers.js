@@ -1,7 +1,13 @@
 import { prisma } from '../config/prisma.js';
+import { getStudentAcademicLevel, calculateAuthorizedStudentCgpa } from './academic-auth.js';
 
-export function mapStudent(user, student) {
+export function mapStudent(user, student, authorizedCgpa = null) {
   if (!student) return null;
+  const year = Math.min(Math.max(Number.parseInt(student.year || 1, 10) || 1, 1), 4);
+  const rawSem = Number.parseInt(student.semester || 1, 10) || 1;
+  const termSem = (rawSem === 1 || rawSem === 2) ? rawSem : (((rawSem - 1) % 2) + 1);
+  const cumulativeSem = (year - 1) * 2 + termSem;
+
   return {
     id: user.id,
     email: user.email,
@@ -11,13 +17,16 @@ export function mapStudent(user, student) {
     student_id: student.studentId,
     dorm_no: student.dormNo,
     course: student.courseName,
-    year: student.year,
+    year,
+    cohort: `E${year}`,
+    semester: termSem,
+    cumulative_semester: cumulativeSem,
     dept: student.deptCode,
     parent_name: student.parentName,
     mobile: student.mobile,
     parent_phone: student.parentPhone,
     section: student.section,
-    cgpa: student.cgpa,
+    cgpa: authorizedCgpa != null ? authorizedCgpa : student.cgpa,
   };
 }
 
@@ -43,7 +52,9 @@ export async function getStudentProfile(userId) {
     include: { student: true },
   });
   if (!user?.student) return null;
-  return mapStudent(user, user.student);
+  const authLevel = getStudentAcademicLevel(user.student);
+  const { cgpa } = await calculateAuthorizedStudentCgpa(user.student.studentId, authLevel);
+  return mapStudent(user, user.student, cgpa);
 }
 
 export async function getFacultyProfile(userId) {
@@ -183,9 +194,10 @@ export function gradePointsFor(marks, max) {
 }
 
 export async function refreshStudentCgpa(studentId) {
-  const records = await prisma.semesterCgpa.findMany({ where: { studentId } });
-  if (!records.length) return;
-  const cgpa = Math.round((records.reduce((s, r) => s + r.gpa, 0) / records.length) * 100) / 100;
+  const student = await prisma.student.findUnique({ where: { studentId } });
+  if (!student) return 0;
+  const authLevel = getStudentAcademicLevel(student);
+  const { cgpa } = await calculateAuthorizedStudentCgpa(studentId, authLevel);
   await prisma.student.update({ where: { studentId }, data: { cgpa } });
   return cgpa;
 }

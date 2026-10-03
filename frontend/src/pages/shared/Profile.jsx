@@ -43,7 +43,7 @@ export default function ProfilePage() {
             <>
               <div className="info-item"><label>Student ID</label><p>{user.student_id}</p></div>
               <div className="info-item"><label>Course</label><p>{user.course}</p></div>
-              <div className="info-item"><label>Year / Semester</label><p>Year {user.year}</p></div>
+              <div className="info-item"><label>Year / Semester</label><p>Year {user.year} ({user.cohort || `E${user.year}`}) · Semester {user.semester || 1}</p></div>
               <div className="info-item"><label>Department</label><p>{user.dept}</p></div>
               <div className="info-item"><label>Section</label><p>{user.section}</p></div>
               <div className="info-item"><label>Dorm / Hostel</label><p>{user.dorm_no}</p></div>

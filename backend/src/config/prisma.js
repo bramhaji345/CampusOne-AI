@@ -23,6 +23,9 @@ export async function ensureExGrades(client = prisma) {
       SET grade = 'Ex'
       WHERE grade = 'EX'
     `);
+    await client.$executeRawUnsafe(`
+      ALTER TABLE students ADD COLUMN IF NOT EXISTS semester INTEGER DEFAULT 1;
+    `);
   } catch (err) {
     console.warn('Ex grades alignment notice:', err?.message || err);
   }
