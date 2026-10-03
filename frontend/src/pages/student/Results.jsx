@@ -17,30 +17,28 @@ function gradeColor(grade) {
   return 'var(--text-muted)';
 }
 
+const YEAR_OPTIONS = ['E1', 'E2', 'E3', 'E4'];
+const SEMESTER_OPTIONS = ['1', '2'];
+
 export default function StudentResults() {
   const { user } = useAuth();
-  const maxYear = user?.year || 1;
-  const currentTermSem = user?.semester || 1;
-  const allowedYears = Array.from({ length: maxYear }, (_, i) => `E${i + 1}`);
-
-  const [year, setYear] = useState(`E${maxYear}`);
-  const selectedYearNum = Number(year.replace(/\D/g, '')) || 1;
-  const maxSemForSelectedYear = selectedYearNum < maxYear ? 2 : currentTermSem;
-  const allowedSems = Array.from({ length: maxSemForSelectedYear }, (_, i) => String(i + 1));
-
-  const [sem, setSem] = useState(String(Math.min(Number(currentTermSem), maxSemForSelectedYear)));
+  const [year, setYear] = useState(() => (user?.year ? `E${user.year}` : 'E1'));
+  const [sem, setSem] = useState(() => String(user?.semester || 1));
+  const [initialized, setInitialized] = useState(false);
   const [type, setType] = useState('sem');
   const [rows, setRows] = useState([]);
   const [compact, setCompact] = useState(true);
   const [loading, setLoading] = useState(true);
   const [cgpaData, setCgpaData] = useState([]);
 
-  // Adjust sem if selected year changes and sem is no longer authorized
+  // Sync initial selection once authenticated user profile is loaded
   useEffect(() => {
-    if (!allowedSems.includes(sem)) {
-      setSem(allowedSems[allowedSems.length - 1] || '1');
+    if (user && !initialized) {
+      if (user.year) setYear(`E${user.year}`);
+      if (user.semester) setSem(String(user.semester));
+      setInitialized(true);
     }
-  }, [year, allowedSems, sem]);
+  }, [user, initialized]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -96,10 +94,10 @@ export default function StudentResults() {
       <div className="panel no-print">
         <div className="filters">
           <select value={year} onChange={(e) => setYear(e.target.value)} aria-label="Year">
-            {allowedYears.map((y) => <option key={y} value={y}>{y}</option>)}
+            {YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <select value={sem} onChange={(e) => setSem(e.target.value)} aria-label="Semester">
-            {allowedSems.map((s) => <option key={s} value={s}>Semester {s}</option>)}
+            {SEMESTER_OPTIONS.map((s) => <option key={s} value={s}>Semester {s}</option>)}
           </select>
           <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Exam type">
             <option value="sem">Semester marks</option>
@@ -107,8 +105,8 @@ export default function StudentResults() {
           </select>
           <button className={`btn btn-sm ${compact ? 'btn-primary' : 'btn-outline'}`} type="button" onClick={() => setCompact(true)}><LayoutGrid size={14} /> Compact</button>
           <button className={`btn btn-sm ${!compact ? 'btn-primary' : 'btn-outline'}`} type="button" onClick={() => setCompact(false)}><List size={14} /> Detailed</button>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={downloadCsv}><Download size={14} /> Download</button>
-          <button className="btn btn-ghost btn-sm" type="button" onClick={() => window.print()}><Printer size={14} /> Print</button>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={downloadCsv} disabled={rows.length === 0}><Download size={14} /> Download</button>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={() => window.print()} disabled={rows.length === 0}><Printer size={14} /> Print</button>
         </div>
       </div>
 
@@ -124,7 +122,7 @@ export default function StudentResults() {
           </div>
         </div>
 
-        {semGpa != null && type === 'sem' && (
+        {semGpa != null && type === 'sem' && rows.length > 0 && (
           <div style={{ marginBottom: 12, padding: '8px 14px', background: 'var(--bg-soft)', borderRadius: 8, display: 'flex', gap: 20, alignItems: 'center', border: '1px solid var(--border)' }}>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Semester GPA:</span>
             <span style={{ fontWeight: 700, fontSize: 20, color: semGpa >= 8 ? '#22c55e' : semGpa >= 6 ? '#f59e0b' : '#ef4444' }}>
@@ -136,7 +134,7 @@ export default function StudentResults() {
         {loading && <div className="skeleton" style={{ height: 120 }} />}
         {!loading && rows.length === 0 && (
           <EmptyState
-            title="No results for this selection"
+            title="No results found"
             hint="Try another year, semester, or exam type."
           />
         )}
