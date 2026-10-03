@@ -17,6 +17,8 @@ api.interceptors.response.use(
     if (err.response?.status === 401 && !err.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
+      localStorage.removeItem('user_profile');
+      sessionStorage.removeItem('user_profile');
     }
     return Promise.reject(err);
   }

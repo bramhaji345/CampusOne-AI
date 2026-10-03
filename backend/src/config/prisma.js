@@ -1,12 +1,22 @@
 import { PrismaClient } from '../../generated/prisma-v2/index.js';
 
-export const prisma = new PrismaClient();
+const globalForPrisma = globalThis;
+
+export const prisma = globalForPrisma.prisma || new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
+});
+
+if (!globalForPrisma.prisma) {
+  globalForPrisma.prisma = prisma;
+}
 
 let exGradesEnsured = false;
 
 export async function ensureExGrades(client = prisma) {
   if (exGradesEnsured) return;
   exGradesEnsured = true;
+  // In serverless production environments (Vercel), skip running DDL/updates on cold starts
+  if (process.env.VERCEL && process.env.NODE_ENV === 'production') return;
   try {
     await client.$executeRawUnsafe(`
       UPDATE results

@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma.js';
 import {
   getStudentProfile,
+  mapStudent,
   serializeAttendance,
   serializeResult,
   gradeFor,
@@ -144,11 +145,16 @@ export async function listResults(req, res) {
 }
 
 export async function aiResults(req, res) {
-  const student = await getStudentProfile(req.user.id);
-  const authLevel = getStudentAcademicLevel(student);
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { student: true },
+  });
+  if (!user?.student) return res.status(404).json({ error: 'Student profile not found' });
+  const authLevel = getStudentAcademicLevel(user.student);
 
-  // 1. Calculate authorized CGPA and trend strictly within authorized academic boundary
-  const { cgpa, trend } = await calculateAuthorizedStudentCgpa(student.student_id, authLevel);
+  // 1. Calculate authorized CGPA and trend strictly within authorized academic boundary (single execution)
+  const { cgpa, trend } = await calculateAuthorizedStudentCgpa(user.student.studentId, authLevel);
+  const student = mapStudent(user, user.student, cgpa);
 
   // 2. Aggregate subjects strictly within authorized results
   const resultWhere = buildAuthorizedResultWhere(authLevel, { type: 'sem' });

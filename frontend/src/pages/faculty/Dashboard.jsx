@@ -9,30 +9,31 @@ export default function FacultyDashboard() {
   const { user } = useAuth();
   const [outpasses, setOutpasses] = useState([]);
   const [notifs, setNotifs] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [assignedCount, setAssignedCount] = useState(null);
   const [tt, setTt] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      api.get('/outpasses'),
-      api.get('/notifications'),
-      api.get('/students/list', { params: { dept: user?.dept || 'CSE' } }),
-      api.get('/timetable'),
-    ]).then(([o, n, s, t]) => {
-      setOutpasses(o.data.filter((x) => x.status === 'pending'));
-      setNotifs(n.data.slice(0, 4));
-      setStudents(s.data);
-      setTt(t.data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    api.get('/dashboard/overview')
+      .then((r) => {
+        if (r.data?.studentsCount != null) setAssignedCount(r.data.studentsCount);
+      })
+      .catch(() => {});
+
+    api.get('/outpasses')
+      .then((r) => setOutpasses(r.data.filter((x) => x.status === 'pending')))
+      .catch(() => {});
+
+    api.get('/notifications')
+      .then((r) => setNotifs(r.data.slice(0, 4)))
+      .catch(() => {});
+
+    api.get('/timetable')
+      .then((r) => setTt(r.data))
+      .catch(() => {});
   }, [user]);
 
   const today = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
   const todayClasses = tt.filter((r) => r.day === today);
-
-  if (loading) {
-    return <div><div className="page-title"><h1>Faculty Dashboard</h1></div><SkeletonGrid /></div>;
-  }
 
   return (
     <div>
@@ -42,7 +43,7 @@ export default function FacultyDashboard() {
       </div>
       <div className="stats-grid">
         <div className="stat-card"><div className="label">Pending outpasses</div><div className="value">{outpasses.length}</div></div>
-        <div className="stat-card"><div className="label">Assigned students</div><div className="value">{students.length}</div></div>
+        <div className="stat-card"><div className="label">Assigned students</div><div className="value">{assignedCount ?? '…'}</div></div>
         <div className="stat-card"><div className="label">Subjects</div><div className="value">{user?.subjects?.split(',').filter(Boolean).length || 0}</div></div>
         <div className="stat-card"><div className="label">Today's classes</div><div className="value">{todayClasses.length}</div></div>
       </div>

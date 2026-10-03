@@ -46,14 +46,18 @@ export function mapFaculty(user, faculty) {
   };
 }
 
-export async function getStudentProfile(userId) {
+export async function getStudentProfile(userId, { calculateCgpa = false } = {}) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { student: true },
   });
   if (!user?.student) return null;
-  const authLevel = getStudentAcademicLevel(user.student);
-  const { cgpa } = await calculateAuthorizedStudentCgpa(user.student.studentId, authLevel);
+  let cgpa = user.student.cgpa;
+  if (calculateCgpa) {
+    const authLevel = getStudentAcademicLevel(user.student);
+    const calculated = await calculateAuthorizedStudentCgpa(user.student.studentId, authLevel);
+    cgpa = calculated.cgpa;
+  }
   return mapStudent(user, user.student, cgpa);
 }
 

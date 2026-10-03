@@ -12,6 +12,7 @@ export function useRealtimeSync() {
     let stopped = false;
     let retryDelay = 1000;
     let controller = null;
+    let hasConnectedOnce = false;
 
     const connect = async () => {
       while (!stopped) {
@@ -45,7 +46,10 @@ export function useRealtimeSync() {
 
           retryDelay = 1000;
           setState('connected');
-          window.dispatchEvent(new CustomEvent('campus:reconnected'));
+          if (hasConnectedOnce) {
+            window.dispatchEvent(new CustomEvent('campus:reconnected'));
+          }
+          hasConnectedOnce = true;
 
           const reader = response.body.getReader();
           const decoder = new TextDecoder();

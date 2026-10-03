@@ -15,10 +15,35 @@ export async function login(req, res) {
   if (!['student', 'faculty', 'admin'].includes(role)) {
     return res.status(400).json({ error: 'Choose a valid portal: student, faculty, or admin' });
   }
-  let user = await prisma.user.findFirst({
-    where: { email: { equals: identifier, mode: 'insensitive' }, role, status: 'active' },
-    include: { student: true, faculty: true },
-  });
+
+  let user = null;
+  const isEmail = identifier.includes('@');
+
+  // Direct fast-path indexed lookups
+  if (!isEmail && role === 'student') {
+    const student = await prisma.student.findFirst({
+      where: { studentId: { equals: identifier, mode: 'insensitive' } },
+      include: { user: true },
+    });
+    if (student?.user && student.user.status === 'active' && student.user.role === role) {
+      user = { ...student.user, student, faculty: null };
+    }
+  } else if (!isEmail && role === 'faculty') {
+    const faculty = await prisma.faculty.findFirst({
+      where: { facultyId: { equals: identifier, mode: 'insensitive' } },
+      include: { user: true },
+    });
+    if (faculty?.user && faculty.user.status === 'active' && faculty.user.role === role) {
+      user = { ...faculty.user, faculty, student: null };
+    }
+  } else {
+    user = await prisma.user.findFirst({
+      where: { email: { equals: identifier, mode: 'insensitive' }, role, status: 'active' },
+      include: { student: true, faculty: true },
+    });
+  }
+
+  // Fallback for edge cases (e.g. entered email without @ or ID with unusual pattern)
   if (!user && role === 'student') {
     const student = await prisma.student.findFirst({
       where: {
@@ -32,8 +57,7 @@ export async function login(req, res) {
     if (student?.user && student.user.status === 'active' && student.user.role === role) {
       user = { ...student.user, student, faculty: null };
     }
-  }
-  if (!user && role === 'faculty') {
+  } else if (!user && role === 'faculty') {
     const faculty = await prisma.faculty.findFirst({
       where: {
         OR: [
@@ -47,14 +71,15 @@ export async function login(req, res) {
       user = { ...faculty.user, faculty, student: null };
     }
   }
+
   if (!user) return res.status(401).json({ error: 'Invalid credentials for this portal' });
   const ok = await bcrypt.compare(String(password), user.password);
   if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
   const token = signToken(user);
   let profile = { id: user.id, email: user.email, name: user.name, role: user.role, photo: user.photo };
-  if (user.role === 'student') profile = mapStudent(user, user.student);
-  if (user.role === 'faculty') profile = mapFaculty(user, user.faculty);
+  if (user.role === 'student' && user.student) profile = mapStudent(user, user.student);
+  if (user.role === 'faculty' && user.faculty) profile = mapFaculty(user, user.faculty);
   res.json({ token, user: profile });
 }
 
@@ -100,10 +125,13 @@ export async function resetPassword(req, res) {
 }
 
 export async function me(req, res) {
-  const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  if (user.role === 'student') return res.json(await getStudentProfile(user.id));
-  if (user.role === 'faculty') return res.json(await getFacultyProfile(user.id));
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.id },
+    include: { student: true, faculty: true },
+  });
+  if (!user || user.status !== 'active') return res.status(404).json({ error: 'User not found' });
+  if (user.role === 'student' && user.student) return res.json(mapStudent(user, user.student));
+  if (user.role === 'faculty' && user.faculty) return res.json(mapFaculty(user, user.faculty));
   res.json({ id: user.id, email: user.email, name: user.name, role: user.role, photo: user.photo });
 }
 

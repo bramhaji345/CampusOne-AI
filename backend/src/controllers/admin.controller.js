@@ -874,11 +874,15 @@ export async function search(req, res) {
 
 export async function overview(req, res) {
   if (req.user.role === 'student') {
-    const student = await getStudentProfile(req.user.id);
+    const student = await prisma.student.findUnique({
+      where: { userId: req.user.id },
+      select: { studentId: true, cgpa: true, year: true, semester: true, deptCode: true, courseName: true, section: true },
+    });
+    if (!student) return res.json({});
     const [assignments, submitted, pendingOut, notifs] = await Promise.all([
       prisma.assignment.count(),
-      prisma.assignmentSubmission.count({ where: { studentId: student.student_id } }),
-      prisma.outpass.count({ where: { studentId: student.student_id, status: 'pending' } }),
+      prisma.assignmentSubmission.count({ where: { studentId: student.studentId } }),
+      prisma.outpass.count({ where: { studentId: student.studentId, status: 'pending' } }),
       prisma.notification.count({
         where: { OR: [{ targetRole: { in: ['student', 'all'] } }, { targetId: req.user.id }] },
       }),
@@ -887,15 +891,28 @@ export async function overview(req, res) {
       pendingAssignments: Math.max(assignments - submitted, 0),
       pendingOutpasses: pendingOut,
       notifications: notifs,
-      student,
+      student: {
+        student_id: student.studentId,
+        year: student.year,
+        semester: student.semester,
+        dept: student.deptCode,
+        course: student.courseName,
+        section: student.section,
+        cgpa: student.cgpa,
+      },
     });
   }
   if (req.user.role === 'faculty') {
-    const [pendingOutpasses, assignments] = await Promise.all([
+    const faculty = await prisma.faculty.findUnique({
+      where: { userId: req.user.id },
+      select: { deptCode: true, facultyId: true },
+    });
+    const [pendingOutpasses, assignments, studentsCount] = await Promise.all([
       prisma.outpass.count({ where: { status: 'pending' } }),
       prisma.assignment.count(),
+      faculty?.deptCode ? prisma.student.count({ where: { deptCode: faculty.deptCode } }) : 0,
     ]);
-    return res.json({ pendingOutpasses, assignments });
+    return res.json({ pendingOutpasses, assignments, studentsCount });
   }
   res.json({});
 }

@@ -1,36 +1,59 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import ProtectedRoute from './components/ProtectedRoute';
-import Landing from './pages/Landing';
-import Login from './pages/Login';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import StudentLayout, { FacultyLayout, AdminLayout } from './pages/layouts';
-import StudentDashboard from './pages/student/Dashboard';
-import StudentResults from './pages/student/Results';
-import StudentAttendance from './pages/student/Attendance';
-import TimetablePage from './pages/student/Timetable';
-import StudentAssignments from './pages/student/Assignments';
-import StudentOutpasses from './pages/student/Outpasses';
-import StudentCertificates from './pages/student/Certificates';
-import FacultyDashboard from './pages/faculty/Dashboard';
-import FacultyAttendance from './pages/faculty/Attendance';
-import FacultyMarks from './pages/faculty/Marks';
-import FacultyOutpasses from './pages/faculty/Outpasses';
-import FacultyAssignments from './pages/faculty/Assignments';
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminStudents from './pages/admin/Students';
-import AdminFaculty from './pages/admin/Faculty';
-import AdminCertificates from './pages/admin/Certificates';
-import AdminScanner from './pages/admin/Scanner';
-import AdminAuditLogs from './pages/admin/AuditLogs';
-import ProfilePage from './pages/shared/Profile';
-import SettingsPage from './pages/shared/Settings';
-import NotificationsPage from './pages/shared/Notifications';
-import HelpPage from './pages/shared/Help';
+
+// Layouts
+const StudentLayout = lazy(() => import('./pages/layouts').then((m) => ({ default: m.default })));
+const FacultyLayout = lazy(() => import('./pages/layouts').then((m) => ({ default: m.FacultyLayout })));
+const AdminLayout = lazy(() => import('./pages/layouts').then((m) => ({ default: m.AdminLayout })));
+
+// Public Pages
+const Landing = lazy(() => import('./pages/Landing'));
+const Login = lazy(() => import('./pages/Login'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+
+// Student Pages
+const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
+const StudentResults = lazy(() => import('./pages/student/Results'));
+const StudentAttendance = lazy(() => import('./pages/student/Attendance'));
+const TimetablePage = lazy(() => import('./pages/student/Timetable'));
+const StudentAssignments = lazy(() => import('./pages/student/Assignments'));
+const StudentOutpasses = lazy(() => import('./pages/student/Outpasses'));
+const StudentCertificates = lazy(() => import('./pages/student/Certificates'));
+
+// Faculty Pages
+const FacultyDashboard = lazy(() => import('./pages/faculty/Dashboard'));
+const FacultyAttendance = lazy(() => import('./pages/faculty/Attendance'));
+const FacultyMarks = lazy(() => import('./pages/faculty/Marks'));
+const FacultyOutpasses = lazy(() => import('./pages/faculty/Outpasses'));
+const FacultyAssignments = lazy(() => import('./pages/faculty/Assignments'));
+
+// Admin Pages
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminStudents = lazy(() => import('./pages/admin/Students'));
+const AdminFaculty = lazy(() => import('./pages/admin/Faculty'));
+const AdminCertificates = lazy(() => import('./pages/admin/Certificates'));
+const AdminScanner = lazy(() => import('./pages/admin/Scanner'));
+const AdminAuditLogs = lazy(() => import('./pages/admin/AuditLogs'));
+
+// Shared Pages
+const ProfilePage = lazy(() => import('./pages/shared/Profile'));
+const SettingsPage = lazy(() => import('./pages/shared/Settings'));
+const NotificationsPage = lazy(() => import('./pages/shared/Notifications'));
+const HelpPage = lazy(() => import('./pages/shared/Help'));
+
+function PageFallback() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+      <div className="skeleton" style={{ width: 140, height: 28, borderRadius: 8 }} />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -39,7 +62,8 @@ export default function App() {
         <ConfirmProvider>
           <AuthProvider>
             <BrowserRouter>
-              <Routes>
+              <Suspense fallback={<PageFallback />}>
+                <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -87,7 +111,8 @@ export default function App() {
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
-            </BrowserRouter>
+            </Suspense>
+          </BrowserRouter>
           </AuthProvider>
         </ConfirmProvider>
       </ToastProvider>

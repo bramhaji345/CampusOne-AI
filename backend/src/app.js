@@ -25,7 +25,7 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'), { maxAge: '7d' }));
 
 app.get('/', (_req, res) => {
   res.json({ status: 'ok', app: 'CampusOne AI Backend API' });

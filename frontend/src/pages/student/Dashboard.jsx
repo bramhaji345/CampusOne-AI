@@ -14,20 +14,27 @@ export default function StudentDashboard() {
   const [att, setAtt] = useState(null);
   const [notifs, setNotifs] = useState([]);
   const [overview, setOverview] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [attLoading, setAttLoading] = useState(true);
 
   const load = useCallback(() => {
-    Promise.all([
-      api.get('/results/ai-analysis'),
-      api.get('/attendance/ai-analysis'),
-      api.get('/notifications'),
-      api.get('/dashboard/overview'),
-    ]).then(([a, b, c, d]) => {
-      setAi(a.data);
-      setAtt(b.data);
-      setNotifs(c.data.slice(0, 4));
-      setOverview(d.data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    api.get('/dashboard/overview')
+      .then((r) => setOverview(r.data))
+      .catch(() => {});
+
+    api.get('/attendance/ai-analysis')
+      .then((r) => setAtt(r.data))
+      .catch(() => {})
+      .finally(() => setAttLoading(false));
+
+    api.get('/results/ai-analysis')
+      .then((r) => setAi(r.data))
+      .catch(() => {})
+      .finally(() => setAiLoading(false));
+
+    api.get('/notifications')
+      .then((r) => setNotifs(r.data.slice(0, 4)))
+      .catch(() => {});
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -51,15 +58,6 @@ export default function StudentDashboard() {
     if (year) cgpaByYear.set(year, item.gpa);
   }
 
-  if (loading) {
-    return (
-      <div>
-        <div className="page-title"><h1>Student Dashboard</h1><p>Loading your campus overview…</p></div>
-        <SkeletonGrid />
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="page-title">
@@ -68,10 +66,10 @@ export default function StudentDashboard() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card"><div className="label">Current CGPA</div><div className="value">{ai?.cgpa ?? user?.cgpa}</div></div>
-        <div className="stat-card"><div className="label">Overall Attendance</div><div className="value">{attPct}%</div></div>
-        <div className="stat-card"><div className="label">Pending assignments</div><div className="value">{overview?.pendingAssignments ?? 0}</div></div>
-        <div className="stat-card"><div className="label">Active outpasses</div><div className="value">{overview?.pendingOutpasses ?? 0}</div></div>
+        <div className="stat-card"><div className="label">Current CGPA</div><div className="value">{user?.cgpa ?? ai?.cgpa ?? '—'}</div></div>
+        <div className="stat-card"><div className="label">Overall Attendance</div><div className="value">{att ? `${attPct}%` : (attLoading ? '…' : '0%')}</div></div>
+        <div className="stat-card"><div className="label">Pending assignments</div><div className="value">{overview ? (overview.pendingAssignments ?? 0) : '…'}</div></div>
+        <div className="stat-card"><div className="label">Active outpasses</div><div className="value">{overview ? (overview.pendingOutpasses ?? 0) : '…'}</div></div>
       </div>
 
       <div className="panel cgpa-history-panel">
@@ -79,7 +77,7 @@ export default function StudentDashboard() {
         <div className="cgpa-history-row">
           {Array.from({ length: user?.year || 1 }, (_, index) => `E${index + 1}`).map((year) => (
             <div className={`cgpa-year ${year === `E${user?.year || 1}` ? 'current' : ''}`} key={year}>
-              <span>{year}</span><strong>{cgpaByYear.get(year)?.toFixed(2) || '—'}</strong>
+              <span>{year}</span><strong>{cgpaByYear.get(year)?.toFixed(2) || (aiLoading ? '…' : '—')}</strong>
             </div>
           ))}
         </div>
@@ -94,18 +92,26 @@ export default function StudentDashboard() {
 
       <div className="ai-card">
         <div className="ai-label"><Sparkles size={14} /> AI Academic Insights</div>
-        <p>{ai?.insight}</p>
-        {ai?.recommendations?.length > 0 && (
-          <ul style={{ marginTop: 10, color: 'var(--text-muted)', paddingLeft: 18 }}>
-            {ai.recommendations.map((r) => <li key={r}>{r}</li>)}
-          </ul>
+        {aiLoading ? (
+          <div className="skeleton" style={{ height: 36, marginTop: 8 }} />
+        ) : (
+          <>
+            <p>{ai?.insight || 'Academic analytics will update as results and attendance are recorded.'}</p>
+            {ai?.recommendations?.length > 0 && (
+              <ul style={{ marginTop: 10, color: 'var(--text-muted)', paddingLeft: 18 }}>
+                {ai.recommendations.map((r) => <li key={r}>{r}</li>)}
+              </ul>
+            )}
+          </>
         )}
       </div>
 
       <div className="grid-2">
         <div className="panel">
           <h3>CGPA trend</h3>
-          {ai?.trend?.length ? (
+          {aiLoading ? (
+            <div className="skeleton" style={{ height: 250 }} />
+          ) : ai?.trend?.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={ai.trend}>
                 <defs>
@@ -125,7 +131,9 @@ export default function StudentDashboard() {
         </div>
         <div className="panel">
           <h3>Subject performance</h3>
-          {ai?.subjects?.length ? (
+          {aiLoading ? (
+            <div className="skeleton" style={{ height: 250 }} />
+          ) : ai?.subjects?.length ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={ai.subjects}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />

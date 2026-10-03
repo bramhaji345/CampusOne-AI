@@ -8,13 +8,17 @@ import api from '../../api';
 export default function AdminDashboard() {
   const [stats, setStats] = useState({});
   const [analytics, setAnalytics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const load = useCallback(() => {
-    Promise.all([api.get('/admin/stats'), api.get('/admin/analytics')])
-      .then(([s, a]) => { setStats(s.data); setAnalytics(a.data); })
+    api.get('/admin/stats')
+      .then((s) => setStats(s.data))
+      .catch(() => {});
+
+    api.get('/admin/analytics')
+      .then((a) => setAnalytics(a.data))
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => setAnalyticsLoading(false));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -24,8 +28,6 @@ export default function AdminDashboard() {
     window.addEventListener('campus:reconnected', refresh);
     return () => { window.removeEventListener('campus:data-changed', refresh); window.removeEventListener('campus:reconnected', refresh); };
   }, [load]);
-
-  if (loading) return <div><div className="page-title"><h1>Administration</h1></div><SkeletonGrid /></div>;
 
   return (
     <div>
@@ -51,7 +53,9 @@ export default function AdminDashboard() {
       <div className="grid-2">
         <div className="panel">
           <h3>Students by department</h3>
-          {analytics?.depts?.length > 0 && (
+          {analyticsLoading ? (
+            <div className="skeleton" style={{ height: 220 }} />
+          ) : analytics?.depts?.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={analytics.depts}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
@@ -61,7 +65,7 @@ export default function AdminDashboard() {
                 <Bar dataKey="c" name="Students" fill="var(--chart-primary)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
+          ) : null}
         </div>
         <div className="panel">
           <h3>Quick modules</h3>

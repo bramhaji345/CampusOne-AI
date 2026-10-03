@@ -31,11 +31,24 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const prefetchDashboard = (r) => {
+    try {
+      if (r === 'student') import('./student/Dashboard');
+      else if (r === 'faculty') import('./faculty/Dashboard');
+      else if (r === 'admin') import('./admin/Dashboard');
+    } catch {}
+  };
+
+  useEffect(() => {
+    prefetchDashboard(role);
+  }, [role]);
+
   const choosePortal = (nextRole) => {
     setRole(nextRole);
     setError('');
     setEmail('');
     setPassword('');
+    prefetchDashboard(nextRole);
   };
 
   const onSubmit = async (e) => {
