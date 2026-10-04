@@ -2078,14 +2078,34 @@ body { background:var(--bg); color:var(--text); }
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5) !important;
 }
 
+.auth-card-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(61, 52, 139, 0.08);
+}
+
+.auth-card-logo-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+[data-theme='dark'] .auth-card-top-bar {
+  border-bottom-color: rgba(124, 92, 255, 0.16);
+}
+
 .auth-card-logo-wrap {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   margin-bottom: 12px;
 }
 
 .role-auth-header {
-  text-align: center;
+  text-align: left !important;
   margin-bottom: 20px;
 }
 
@@ -2421,23 +2441,32 @@ body { background:var(--bg); color:var(--text); }
   }
   .portal-card-wrapper:last-child {
     grid-column: 1 / -1;
-    max-width: 370px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
     width: 100%;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .portal-cards-grid {
-    grid-template-columns: 1fr;
-    max-width: 440px;
+    grid-template-columns: 1fr !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    gap: 16px !important;
   }
+  .portal-card-wrapper,
   .portal-card-wrapper:last-child {
-    grid-column: auto;
+    grid-column: auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
   }
   .portal-card {
-    min-height: auto;
-    padding: 20px;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: clamp(18px, 4vw, 24px) !important;
+    box-sizing: border-box !important;
   }
 }
 

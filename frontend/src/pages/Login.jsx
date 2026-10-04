@@ -22,14 +22,16 @@ function loginErrorMessage(err, role) {
 
 const roleConfigs = {
   student: {
+    roleLabel: 'Student',
     tag: 'STUDENT PORTAL',
     title: 'Student Portal',
     subtitle: 'Sign in to access your academic dashboard',
     identifierLabel: 'Student ID or College Email',
-    identifierPlaceholder: 'e.g. 21B91A0501 or student@campusone.edu',
+    identifierPlaceholder: 'O2xxxx or O2xxxx@campusone.edu',
     passwordPlaceholder: 'Enter your password',
   },
   faculty: {
+    roleLabel: 'Faculty',
     tag: 'FACULTY PORTAL',
     title: 'Faculty Portal',
     subtitle: 'Sign in to manage your academic activities',
@@ -38,6 +40,7 @@ const roleConfigs = {
     passwordPlaceholder: 'Enter your password',
   },
   admin: {
+    roleLabel: 'Admin',
     tag: 'ADMIN PORTAL',
     title: 'Admin Portal',
     subtitle: 'Sign in to manage CampusOne-AI',
@@ -103,16 +106,16 @@ export default function Login() {
     <div className="auth-page campus-login role-login-page">
       <div className="auth-form-wrap">
         <div className="auth-card role-auth-card">
-          {/* Logo & Branding */}
-          <div className="auth-card-logo-wrap">
-            <Link to="/" title="CampusOne-AI Home">
-              <Logo size={46} />
+          {/* Top Bar: Logo on left with CampusOne AI text, spanning across to role badge at the end of the box */}
+          <div className="auth-card-top-bar">
+            <Link to="/" title="CampusOne-AI Home" className="auth-card-logo-link">
+              <Logo size={40} />
             </Link>
+            <span className={`role-badge role-badge-${role}`}>{config.tag}</span>
           </div>
 
           {/* Role Header */}
           <div className="role-auth-header">
-            <span className={`role-badge role-badge-${role}`}>{config.tag}</span>
             <h1 className="role-auth-title">{config.title}</h1>
             <p className="role-auth-subtitle">{config.subtitle}</p>
           </div>
