@@ -56,7 +56,10 @@ export async function restoreDatabase() {
   const database = parsedUrl.pathname.replace(/^\//, '').split('?')[0] || 'campusone';
 
   const psqlArgs = [
-    '-d', dbUrl,
+    '-h', host,
+    '-p', String(port),
+    '-U', user,
+    '-d', database,
     '-v', 'ON_ERROR_STOP=0',
   ];
 
@@ -68,6 +71,12 @@ export async function restoreDatabase() {
   return new Promise((resolve, reject) => {
     console.log(`Executing restore via ${psqlBin}...`);
     const psqlProc = spawn(psqlBin, psqlArgs, { env, stdio: ['pipe', 'inherit', 'inherit'] });
+
+    psqlProc.stdin.on('error', (err) => {
+      if (err.code !== 'EPIPE') {
+        console.warn('stdin stream error:', err.message);
+      }
+    });
 
     psqlProc.on('error', (err) => {
       console.error(`Failed to launch ${psqlBin}: ${err.message}`);
@@ -87,9 +96,12 @@ export async function restoreDatabase() {
     if (fs.existsSync(dumpGzPath)) {
       const readStream = fs.createReadStream(dumpGzPath);
       const gunzip = zlib.createGunzip();
+      gunzip.on('error', () => {});
+      readStream.on('error', () => {});
       readStream.pipe(gunzip).pipe(psqlProc.stdin);
     } else {
       const readStream = fs.createReadStream(dumpSqlPath);
+      readStream.on('error', () => {});
       readStream.pipe(psqlProc.stdin);
     }
   });

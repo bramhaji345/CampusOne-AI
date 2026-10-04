@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 import Logo from '../components/Logo';
 import api from '../api';
 
@@ -32,42 +33,55 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-visual">
-        <Logo />
-        <div>
-          <h2>Reset with your college mail</h2>
-          <p style={{ marginTop: 12, opacity: 0.9 }}>
-            Enter your @campusone.demo or @campusone.edu address. A secure reset link is sent only to registered inboxes.
-          </p>
-        </div>
-        <p style={{ opacity: 0.8, fontSize: 14 }}>CampusOne AI</p>
-      </div>
+    <div className="auth-page auth-clean-page">
       <div className="auth-form-wrap">
         <div className="auth-card">
-          <Logo size={44} />
-          <h1>Forgot password</h1>
-          <p className="subtitle">A reset link will be sent to your college inbox</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <Logo size={46} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <h1>Forgot password</h1>
+            <p className="subtitle">Enter your college email and we will send you a secure link to reset your password.</p>
+          </div>
           {error && <div className="error-msg">{error}</div>}
-          {message && <div className="success-msg">{message}</div>}
+          {message && (
+            <div className="success-msg" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+              <span>{message}</span>
+            </div>
+          )}
           {demoLink && (
             <div className="demo-hint">
-              Demo reset link (emailed in production):
-              <Link to={demoLink} style={{ color: 'var(--primary)', fontWeight: 600 }}>Open reset page</Link>
+              <strong>Demo reset link (emailed in production):</strong>
+              <div style={{ marginTop: 6 }}>
+                <Link to={demoLink} style={{ color: 'var(--primary, #5B3DF5)', fontWeight: 700, textDecoration: 'underline' }}>
+                  Click here to open reset password page →
+                </Link>
+              </div>
             </div>
           )}
           <form onSubmit={onSubmit}>
-            <div className="form-group">
+            <div className="form-group" style={{ marginBottom: 18 }}>
               <label htmlFor="mail">College Email</label>
-              <input id="mail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder="you@campusone.demo" />
+              <input
+                id="mail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@campusone.demo"
+                autoComplete="email"
+              />
             </div>
             <button className="btn btn-primary" style={{ width: '100%' }} disabled={loading} type="submit">
-              {loading ? 'Sending…' : 'Send reset link'}
+              {loading ? 'Sending link…' : 'Send reset link'}
             </button>
           </form>
-          <p style={{ marginTop: 16, textAlign: 'center', fontSize: 14 }}>
-            <Link to="/login" style={{ color: 'var(--text-muted)' }}>← Back to login</Link>
-          </p>
+          <div style={{ marginTop: 22, textAlign: 'center' }}>
+            <Link to="/login" className="auth-back-link">
+              <ArrowLeft size={16} /> Back to login
+            </Link>
+          </div>
         </div>
       </div>
     </div>

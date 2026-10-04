@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch --watch-path=src server.js",
     "db:local": "node scripts/start-local-db.mjs",
+    "studio": "prisma studio",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:deploy": "prisma migrate deploy",

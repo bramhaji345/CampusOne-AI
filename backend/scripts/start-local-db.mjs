@@ -5,7 +5,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dataDir = path.join(root, '.pgdata');
+const defaultDataDir = process.env.LOCALAPPDATA
+  ? path.join(process.env.LOCALAPPDATA, 'campusone-pgdata')
+  : path.join(root, '.pgdata');
+const dataDir = process.env.PGDATA_DIR || defaultDataDir;
 const ctlLog = path.join(root, 'pg-ctl.log');
 const bin = 'C:\\Program Files\\PostgreSQL\\16\\bin';
 const pgctl = path.join(bin, 'pg_ctl.exe');
@@ -45,6 +48,15 @@ function psqlOk(database, sql) {
   return result.status === 0 ? String(result.stdout || '').trim() : '';
 }
 
+async function waitForReady(database = 'postgres', ms = 25000) {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    if (psqlOk(database, 'SELECT 1') === '1') return true;
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return false;
+}
+
 if (!fs.existsSync(pgctl)) {
   console.error('PostgreSQL 16 was not found at C:\\Program Files\\PostgreSQL\\16\\bin');
   process.exit(1);
@@ -57,10 +69,10 @@ if (!fs.existsSync(dataDir)) {
     console.error(init.stderr || '');
     process.exit(init.status || 1);
   }
-  console.log('Created local Postgres data folder at backend/.pgdata');
+  console.log(`Created local Postgres data folder at ${dataDir}`);
 }
 
-if (await portOpen(5433)) {
+if (await portOpen(5433) && (await waitForReady('postgres', 2000))) {
   console.log('Local Postgres already running on 5433');
 } else {
   const pidFile = path.join(dataDir, 'postmaster.pid');
@@ -74,7 +86,7 @@ if (await portOpen(5433)) {
     '-o', '-p 5433 -h 127.0.0.1',
     'start',
     '-W',
-  ]);
+  ], { stdio: 'ignore' });
   if (result.status !== 0) {
     const text = `${result.stdout || ''}\n${result.stderr || ''}`;
     if (!/already running|server is running/i.test(text)) {
@@ -82,8 +94,8 @@ if (await portOpen(5433)) {
       process.exit(result.status || 1);
     }
   }
-  if (!(await waitForPort(5433))) {
-    console.error('Local Postgres did not start on port 5433');
+  if (!(await waitForReady('postgres'))) {
+    console.error('Local Postgres did not become ready on port 5433');
     process.exit(1);
   }
   console.log('Local Postgres started on 5433');
@@ -100,18 +112,27 @@ if (psqlOk('postgres', "SELECT 1 FROM pg_database WHERE datname='campusone'") !=
 }
 
 const hasUsers = psqlOk('campusone', "SELECT to_regclass('public.users') IS NOT NULL");
+const dumpGz = path.join(root, 'prisma', 'campusone_dump.sql.gz');
+const dumpSql = path.join(root, 'prisma', 'campusone_dump.sql');
+const hasDump = fs.existsSync(dumpGz) || fs.existsSync(dumpSql);
+
 if (hasUsers !== 't' && hasUsers !== 'true') {
-  const migrate = run('npx', ['prisma', 'migrate', 'deploy'], { cwd: root, shell: true });
-  process.stdout.write(migrate.stdout || '');
-  process.stderr.write(migrate.stderr || '');
-  if (migrate.status !== 0) process.exit(migrate.status || 1);
+  if (hasDump) {
+    console.log('Restoring complete campus database snapshot (4,320 students, 300 faculty, all marks & timetables)...');
+    const { restoreDatabase } = await import('./restore-database.mjs');
+    await restoreDatabase();
+  } else {
+    const migrate = run('npx', ['prisma', 'migrate', 'deploy'], { cwd: root, shell: true });
+    process.stdout.write(migrate.stdout || '');
+    process.stderr.write(migrate.stderr || '');
+    if (migrate.status !== 0) process.exit(migrate.status || 1);
+  }
 }
 
 const hasAdmin = psqlOk('campusone', "SELECT 1 FROM users WHERE email='admin@campusone.demo' LIMIT 1");
 if (hasAdmin !== '1') {
-  const dumpGz = path.join(root, 'prisma', 'campusone_dump.sql.gz');
-  if (fs.existsSync(dumpGz)) {
-    console.log('Restoring complete campus database snapshot (4,320 students, 300 faculty, all marks & timetables)...');
+  if (hasDump) {
+    console.log('Restoring complete campus database snapshot...');
     const { restoreDatabase } = await import('./restore-database.mjs');
     await restoreDatabase();
   } else {
@@ -121,3 +142,6 @@ if (hasAdmin !== '1') {
     if (seed.status !== 0) process.exit(seed.status || 1);
   }
 }
+
+psqlOk('campusone', 'ALTER TABLE students ADD COLUMN IF NOT EXISTS semester INTEGER DEFAULT 1;');
+console.log('CampusOne local database is ready.');

@@ -6,3 +6,6 @@ uploads
 *.db
 *.sqlite
 dist
+.pgdata
+pg-ctl.log
+postgres-*.log
