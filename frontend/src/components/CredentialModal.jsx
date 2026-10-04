@@ -142,7 +142,7 @@ export default function CredentialModal({ data, onClose }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="button"
-            className="btn btn-outline"
+            className="btn btn-outline btn-done"
             style={{ minWidth: 100 }}
             onClick={onClose}
           >

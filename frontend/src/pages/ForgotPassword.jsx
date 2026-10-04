@@ -40,6 +40,9 @@ export default function ForgotPassword() {
             <Logo size={46} />
           </div>
           <div style={{ textAlign: 'center' }}>
+            <p className="login-form-eyebrow" style={{ color: '#f18701', fontWeight: 800, fontSize: '0.74rem', letterSpacing: '0.14em', marginBottom: 4 }}>
+              PASSWORD RECOVERY
+            </p>
             <h1>Forgot password</h1>
             <p className="subtitle">Enter your college email and we will send you a secure link to reset your password.</p>
           </div>

@@ -38,6 +38,9 @@ export default function ResetPassword() {
             <Logo size={46} />
           </div>
           <div style={{ textAlign: 'center' }}>
+            <p className="login-form-eyebrow" style={{ color: '#f18701', fontWeight: 800, fontSize: '0.74rem', letterSpacing: '0.14em', marginBottom: 4 }}>
+              SECURITY RESET
+            </p>
             <h1>Set new password</h1>
             <p className="subtitle">Enter your new secure password below to regain access to your account.</p>
           </div>

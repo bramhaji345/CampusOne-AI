@@ -893,7 +893,7 @@ body { background:var(--bg); color:var(--text); }
 .auth-clean-page .auth-card {
   width: 100% !important;
   max-width: 480px !important;
-  background: #ffffff !important;
+  background: linear-gradient(180deg, #ffffff 0%, #faf8ff 100%) !important;
   color: #1a1330 !important;
   border: 1px solid rgba(91, 61, 245, 0.16) !important;
   box-shadow: 0 20px 60px rgba(61, 52, 139, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
@@ -908,6 +908,49 @@ body { background:var(--bg); color:var(--text); }
   color: #f3f1fd !important;
   border-color: rgba(124, 92, 255, 0.28) !important;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5) !important;
+}
+
+.auth-clean-page .auth-card .logo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+}
+
+.auth-clean-page .auth-card .logo-mark {
+  background: linear-gradient(135deg, #5b3df5, #ff6452) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(91, 61, 245, 0.25) !important;
+}
+
+.auth-clean-page .auth-card .logo-text {
+  display: flex !important;
+  flex-direction: column !important;
+  line-height: 1.05 !important;
+  text-align: left !important;
+}
+
+.auth-clean-page .auth-card .logo-text strong {
+  color: #1a1330 !important;
+  font-family: 'Outfit', 'Space Grotesk', sans-serif !important;
+  font-size: 1.32rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.auth-clean-page .auth-card .logo-text span {
+  color: #f18701 !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.16em !important;
+}
+
+[data-theme='dark'] .auth-clean-page .auth-card .logo-text strong {
+  color: #f3f1fd !important;
+}
+
+[data-theme='dark'] .auth-clean-page .auth-card .logo-text span {
+  color: #fbbf24 !important;
 }
 
 .auth-clean-page .auth-card h1 {
@@ -1051,7 +1094,7 @@ body { background:var(--bg); color:var(--text); }
   color: #a5b4fc !important;
 }
 
-/* Credential Modal Styles - High Contrast, Clean & Readable */
+/* Credential Modal Styles - Beautiful Soft Light Surface, High Contrast & Clean */
 .credential-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1067,18 +1110,18 @@ body { background:var(--bg); color:var(--text); }
   max-width: 490px;
   width: 100%;
   padding: 26px;
-  border-radius: 18px;
-  background: #ffffff;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #f9f7fe 0%, #f3effc 100%) !important;
   color: #1a1330;
-  border: 1px solid #dcd8f0;
-  box-shadow: 0 24px 60px rgba(26, 19, 48, 0.22), 0 4px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #dcd5f5;
+  box-shadow: 0 24px 60px rgba(61, 45, 120, 0.16), 0 4px 14px rgba(0, 0, 0, 0.04);
   animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 [data-theme='dark'] .credential-modal-box {
-  background: #1c1638;
+  background: linear-gradient(165deg, #1e173e 0%, #171131 100%) !important;
   color: #f3f1fd;
-  border-color: #352c5e;
+  border-color: #3b2f6b;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
 }
 
@@ -1098,14 +1141,15 @@ body { background:var(--bg); color:var(--text); }
   justify-content: center;
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(91, 61, 245, 0.12), rgba(241, 135, 1, 0.12));
-  color: #5b3df5;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #e0e7ff, #ede9fe);
+  color: #4f46e5;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.16);
   margin-bottom: 10px;
 }
 
 [data-theme='dark'] .credential-icon-badge {
-  background: rgba(124, 92, 255, 0.2);
+  background: rgba(124, 92, 255, 0.22);
   color: #a5b4fc;
 }
 
@@ -1132,14 +1176,15 @@ body { background:var(--bg); color:var(--text); }
 }
 
 .credential-info-card {
-  background: #f7f6fc;
-  border: 1px solid #e5e2f3;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid #e2dcf7;
+  border-radius: 14px;
   padding: 14px 16px;
   margin-bottom: 16px;
   font-size: 0.9rem;
   line-height: 1.75;
   color: #241d3b;
+  box-shadow: 0 2px 10px rgba(91, 61, 245, 0.04);
 }
 
 [data-theme='dark'] .credential-info-card {
@@ -1194,7 +1239,7 @@ body { background:var(--bg); color:var(--text); }
   background: rgba(124, 92, 255, 0.25);
 }
 
-/* The Temporary Password Highlight Container */
+/* The Temporary Password Highlight Container - Soft light indigo wash */
 .credential-pass-section {
   margin-bottom: 18px;
 }
@@ -1216,35 +1261,37 @@ body { background:var(--bg); color:var(--text); }
 }
 
 .credential-pass-box {
-  background: #faf8ff;
-  border: 2px dashed #7c5cff;
-  border-radius: 12px;
-  padding: 14px 16px;
-  position: relative;
-  text-align: center;
-  box-shadow: inset 0 2px 6px rgba(91, 61, 245, 0.05);
-  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #eef2ff 0%, #e8e5fd 100%) !important;
+  border: 2px dashed #7c5cff !important;
+  border-radius: 14px !important;
+  padding: 16px 18px !important;
+  position: relative !important;
+  text-align: center !important;
+  box-shadow: 0 4px 16px rgba(124, 92, 255, 0.12), inset 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+  transition: all 0.2s ease !important;
 }
 
 .credential-pass-box:hover {
-  background: #f4efff;
-  border-color: #5b3df5;
+  background: linear-gradient(135deg, #e5e9ff 0%, #dfdbfc 100%) !important;
+  border-color: #5b3df5 !important;
+  transform: translateY(-1px);
 }
 
 [data-theme='dark'] .credential-pass-box {
-  background: rgba(124, 92, 255, 0.12);
-  border-color: #7c5cff;
+  background: linear-gradient(135deg, rgba(124, 92, 255, 0.16) 0%, rgba(99, 102, 241, 0.12) 100%) !important;
+  border-color: #7c5cff !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
 }
 
 [data-theme='dark'] .credential-pass-box:hover {
-  background: rgba(124, 92, 255, 0.18);
+  background: rgba(124, 92, 255, 0.22) !important;
 }
 
 .credential-pass-code {
   font-family: 'Space Grotesk', 'Courier New', monospace;
-  font-size: 1.38rem;
+  font-size: 1.45rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.15em;
   color: #1e1b4b;
   user-select: all;
   word-break: break-all;
@@ -1259,13 +1306,13 @@ body { background:var(--bg); color:var(--text); }
 .credential-pass-hint {
   display: block;
   font-size: 0.74rem;
-  color: #716985;
-  margin-top: 5px;
+  color: #6b6483;
+  margin-top: 6px;
   font-weight: 500;
 }
 
 [data-theme='dark'] .credential-pass-hint {
-  color: #94a3b8;
+  color: #a5b4fc;
 }
 
 .credential-actions {
@@ -1287,12 +1334,65 @@ body { background:var(--bg); color:var(--text); }
   font-size: 0.88rem;
   border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.credential-actions .btn-primary {
+  background: linear-gradient(135deg, #5b3df5, #7678ed) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(91, 61, 245, 0.25) !important;
+  border: none !important;
+}
+
+.credential-actions .btn-primary:hover {
+  box-shadow: 0 8px 24px rgba(91, 61, 245, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.credential-actions .btn-outline {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1.5px solid #dcd8f0 !important;
+  color: #241d3b !important;
+}
+
+.credential-actions .btn-outline:hover {
+  background: #ffffff !important;
+  border-color: #7c5cff !important;
+  color: #5b3df5 !important;
+}
+
+[data-theme='dark'] .credential-actions .btn-outline {
+  background: #251d47 !important;
+  border-color: #40346e !important;
+  color: #f3f1fd !important;
+}
+
+.credential-modal-box .btn-done {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1.5px solid #dcd8f0 !important;
+  color: #241d3b !important;
+  font-weight: 600 !important;
+  padding: 8px 18px !important;
+  border-radius: 10px !important;
+  transition: all 0.2s ease !important;
+}
+
+.credential-modal-box .btn-done:hover {
+  background: #ffffff !important;
+  border-color: #7c5cff !important;
+  color: #5b3df5 !important;
+}
+
+[data-theme='dark'] .credential-modal-box .btn-done {
+  background: #251d47 !important;
+  border-color: #40346e !important;
+  color: #f3f1fd !important;
 }
 
 .credential-warning {
   background: #fffbeb;
   border: 1px solid #fde68a;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 14px;
   color: #92400e;
   font-size: 0.85rem;
@@ -1308,4 +1408,5 @@ body { background:var(--bg); color:var(--text); }
   border-color: rgba(245, 158, 11, 0.32);
   color: #fde68a;
 }
+
 
