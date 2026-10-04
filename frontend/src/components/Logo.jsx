@@ -1,9 +1,16 @@
 import { GraduationCap, Sparkles } from 'lucide-react';
 
-export default function Logo({ size = 40, withText = true }) {
+export default function Logo({ size = 40, withText = true, className = '' }) {
   return (
-    <div className="logo">
-      <div className="logo-mark" style={{ width: size, height: size, borderRadius: Math.round(size * 0.28) }}>
+    <div className={`logo ${className}`.trim()}>
+      <div
+        className="logo-mark app-blue-logo"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: Math.round(size * 0.28),
+        }}
+      >
         <GraduationCap size={Math.round(size * 0.54)} strokeWidth={2.2} aria-hidden="true" />
         <Sparkles className="logo-spark" size={Math.round(size * 0.28)} strokeWidth={2.5} aria-hidden="true" />
       </div>

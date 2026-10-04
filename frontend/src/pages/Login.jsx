@@ -100,7 +100,7 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page role-login-page">
+    <div className="auth-page campus-login role-login-page">
       <div className="auth-form-wrap">
         <div className="auth-card role-auth-card">
           {/* Logo & Branding */}
@@ -205,7 +205,7 @@ export default function Login() {
                   <span>Signing in...</span>
                 </>
               ) : (
-                <span>Sign In</span>
+                <span>Sign In as {config.roleLabel}</span>
               )}
             </button>
           </form>

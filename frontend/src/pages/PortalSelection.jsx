@@ -89,7 +89,9 @@ export default function PortalSelection() {
             <Sparkles size={14} />
             <span>AI-Powered Campus Management</span>
           </div>
-          <h1>Welcome to CampusOne-AI</h1>
+          <h1 className="portal-title">
+            Welcome to <span className="brand-gradient-text">CampusOne-AI</span>
+          </h1>
           <p className="portal-subtitle">Choose your portal to continue</p>
           <p className="portal-supporting-text">
             Access the tools and insights designed for your role.
