@@ -13,6 +13,7 @@ const AdminLayout = lazy(() => import('./pages/layouts').then((m) => ({ default:
 
 // Public Pages
 const Landing = lazy(() => import('./pages/Landing'));
+const PortalSelection = lazy(() => import('./pages/PortalSelection'));
 const Login = lazy(() => import('./pages/Login'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -65,6 +66,8 @@ export default function App() {
               <Suspense fallback={<PageFallback />}>
                 <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/portals" element={<PortalSelection />} />
+                <Route path="/portal-select" element={<Navigate to="/portals" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
