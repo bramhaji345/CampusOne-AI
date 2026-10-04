@@ -137,7 +137,7 @@ export default function StudentDashboard() {
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={ai.subjects}>
                 <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="3 3" />
-                <XAxis dataKey="subject" tick={{ fontSize: 10 }} interval={0} angle={-18} textAnchor="end" height={58} />
+                <XAxis dataKey="subject" tick={false} axisLine={{ stroke: 'var(--chart-grid)' }} />
                 <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Bar dataKey="percentage" fill="var(--chart-primary)" radius={[8, 8, 0, 0]} />
