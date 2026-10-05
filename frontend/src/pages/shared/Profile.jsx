@@ -129,14 +129,13 @@ export default function ProfilePage() {
       };
 
       const res = await api.patch('/profile', payload);
-      if (res.data?.user) {
-        setUser(res.data.user);
+      const updatedUser = res.data?.user || (await api.get('/auth/me')).data;
+      if (updatedUser) {
+        setUser(updatedUser);
         try {
-          localStorage.setItem('user_profile', JSON.stringify(res.data.user));
+          const storage = localStorage.getItem('token') ? localStorage : sessionStorage;
+          storage.setItem('user_profile', JSON.stringify(updatedUser));
         } catch {}
-      } else {
-        const { data } = await api.get('/auth/me');
-        setUser(data);
       }
       toast('Profile updated successfully');
       setEdit(false);

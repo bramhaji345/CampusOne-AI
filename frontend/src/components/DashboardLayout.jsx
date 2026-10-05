@@ -165,8 +165,31 @@ export default function DashboardLayout({ links, title }) {
             <button className="icon-btn" onClick={() => navigate(`/${user.role}/help`)} type="button" title="Help" aria-label="Help">
               <HelpCircle size={18} />
             </button>
-            <button className="icon-btn" onClick={() => navigate(`/${user.role}/profile`)} type="button" title="Profile" aria-label="Profile">
-              {user?.name ? <span className="avatar sm">{user.name.charAt(0)}</span> : <User size={18} />}
+            <button
+              className="icon-btn"
+              onClick={() => navigate(`/${user.role}/profile`)}
+              type="button"
+              title="Profile"
+              aria-label="Profile"
+              style={{ padding: 0, overflow: 'hidden' }}
+            >
+              {user?.photo ? (
+                <img
+                  src={user.photo}
+                  alt={user?.name || 'Profile'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: 11,
+                    display: 'block',
+                  }}
+                />
+              ) : user?.name ? (
+                <span className="avatar sm">{user.name.charAt(0)}</span>
+              ) : (
+                <User size={18} />
+              )}
             </button>
           </div>
         </header>
