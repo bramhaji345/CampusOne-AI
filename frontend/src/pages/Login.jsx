@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  Check,
   Eye,
   EyeOff,
   Loader2,
@@ -10,6 +11,9 @@ import {
 } from 'lucide-react';
 import Logo from '../components/Logo';
 import { useAuth } from '../context/AuthContext';
+import avatarStudent from '../assets/portals/avatar-student.png';
+import avatarFaculty from '../assets/portals/avatar-faculty.png';
+import avatarAdmin from '../assets/portals/avatar-admin.png';
 
 function loginErrorMessage(err, role) {
   if (err.response?.data?.error) return err.response.data.error;
@@ -27,8 +31,9 @@ const roleConfigs = {
     title: 'Student Portal',
     subtitle: 'Sign in to access your academic dashboard',
     identifierLabel: 'Student ID or College Email',
-    identifierPlaceholder: 'O2xxxx or O2xxxx@campusone.edu',
+    identifierPlaceholder: 'O2xxxxx or O2xxxxx@campusone.edu',
     passwordPlaceholder: 'Enter your password',
+    avatar: avatarStudent,
   },
   faculty: {
     roleLabel: 'Faculty',
@@ -38,6 +43,7 @@ const roleConfigs = {
     identifierLabel: 'Faculty ID or College Email',
     identifierPlaceholder: 'e.g. FAC001 or faculty@campusone.edu',
     passwordPlaceholder: 'Enter your password',
+    avatar: avatarFaculty,
   },
   admin: {
     roleLabel: 'Admin',
@@ -46,7 +52,8 @@ const roleConfigs = {
     subtitle: 'Sign in to manage CampusOne-AI',
     identifierLabel: 'Admin ID or Email',
     identifierPlaceholder: 'admin@campusone.demo',
-    passwordPlaceholder: '••••••••',
+    passwordPlaceholder: 'Enter your password',
+    avatar: avatarAdmin,
   },
 };
 
@@ -82,7 +89,7 @@ export default function Login() {
   }, [role]);
 
   if (!role) {
-    return null; // Will redirect via useEffect
+    return null;
   }
 
   const config = roleConfigs[role];
@@ -93,7 +100,6 @@ export default function Login() {
     setLoading(true);
     try {
       const user = await login(email.trim(), password, role, { remember });
-      // Navigate immediately to the user's dashboard based on server-verified role
       navigate(`/${user.role}`);
     } catch (err) {
       setError(loginErrorMessage(err, role));
@@ -103,21 +109,32 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-page campus-login role-login-page">
-      <div className="auth-form-wrap">
-        <div className="auth-card role-auth-card">
-          {/* Top Bar: Logo on left with CampusOne AI text, spanning across to role badge at the end of the box */}
+    <div className="role-login-page">
+      <div className="role-auth-form-wrap">
+        <div className={`role-auth-card role-auth-card-${role}`}>
+          {/* Top Bar: Brand Logo on Left, Role Badge on Right */}
           <div className="auth-card-top-bar">
             <Link to="/" title="CampusOne-AI Home" className="auth-card-logo-link">
-              <Logo size={40} />
+              <Logo size={42} />
             </Link>
             <span className={`role-badge role-badge-${role}`}>{config.tag}</span>
           </div>
 
-          {/* Role Header */}
-          <div className="role-auth-header">
-            <h1 className="role-auth-title">{config.title}</h1>
-            <p className="role-auth-subtitle">{config.subtitle}</p>
+          <div className="role-card-divider" />
+
+          {/* Role Header: Character Avatar on Left, Title & Subtitle on Right */}
+          <div className="role-auth-header-row">
+            <div className="role-avatar-wrapper" aria-hidden="true">
+              <img
+                src={config.avatar}
+                alt={`${config.roleLabel} Illustration`}
+                className="role-illustration-avatar"
+              />
+            </div>
+            <div className="role-auth-header-text">
+              <h1 className="role-auth-title">{config.title}</h1>
+              <p className="role-auth-subtitle">{config.subtitle}</p>
+            </div>
           </div>
 
           {/* Inline Error Notice */}
@@ -127,13 +144,13 @@ export default function Login() {
             </div>
           )}
 
-          {/* Role-Specific Login Form (NO tabs) */}
+          {/* Form */}
           <form onSubmit={onSubmit} className="role-login-form" noValidate={false}>
             <div className="form-group">
               <label htmlFor="campus-identifier">{config.identifierLabel}</label>
               <div className="input-with-icon">
                 <span className="input-icon" aria-hidden="true">
-                  <User size={18} />
+                  <User size={18} strokeWidth={2.2} />
                 </span>
                 <input
                   id="campus-identifier"
@@ -162,7 +179,7 @@ export default function Login() {
               </div>
               <div className="password-field">
                 <span className="input-icon" aria-hidden="true">
-                  <Lock size={18} />
+                  <Lock size={18} strokeWidth={2.2} />
                 </span>
                 <input
                   id="campus-password"
@@ -187,18 +204,29 @@ export default function Login() {
               </div>
             </div>
 
-            <label className="remember-row">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                disabled={loading}
-              />
-              <span>Keep me signed in on this device</span>
-            </label>
+            {/* Checkbox Row with Custom Orange Checked Box */}
+            <div
+              className="remember-row-custom"
+              onClick={() => !loading && setRemember(!remember)}
+              role="checkbox"
+              aria-checked={remember}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                  e.preventDefault();
+                  !loading && setRemember(!remember);
+                }
+              }}
+            >
+              <div className={`custom-checkbox-box ${remember ? 'checked' : ''}`}>
+                {remember && <Check size={12} strokeWidth={3.5} color="#FFFFFF" />}
+              </div>
+              <span className="checkbox-label-text">Keep me signed in on this device</span>
+            </div>
 
+            {/* Submit Button */}
             <button
-              className="btn btn-primary role-submit-btn"
+              className="btn role-submit-btn"
               type="submit"
               disabled={loading}
             >
@@ -216,7 +244,7 @@ export default function Login() {
           {/* Change Portal Navigation */}
           <div className="change-portal-wrap">
             <Link to="/portals" className="change-portal-link">
-              <ArrowLeft size={16} />
+              <ArrowLeft size={16} strokeWidth={2.4} />
               <span>Change Portal</span>
             </Link>
           </div>

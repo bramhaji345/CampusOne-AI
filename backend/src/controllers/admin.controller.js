@@ -806,26 +806,74 @@ export async function adminAuditLogs(req, res) {
 
 export async function updateProfile(req, res) {
   const { name, mobile, photo, parent_phone, dorm_no } = req.body;
-  if (name || photo) {
-    await prisma.user.update({
+  try {
+    if (name || photo !== undefined) {
+      await prisma.user.update({
+        where: { id: req.user.id },
+        data: {
+          ...(name ? { name } : {}),
+          ...(photo !== undefined ? { photo: photo ? String(photo) : null } : {}),
+        },
+      });
+    }
+
+    if (req.user.role === 'student') {
+      const student = await prisma.student.findUnique({ where: { userId: req.user.id } });
+      if (student) {
+        await prisma.student.update({
+          where: { userId: req.user.id },
+          data: {
+            ...(mobile !== undefined ? { mobile: mobile ? String(mobile) : null } : {}),
+            ...(parent_phone !== undefined ? { parentPhone: parent_phone ? String(parent_phone) : null } : {}),
+            ...(dorm_no !== undefined ? { dormNo: dorm_no ? String(dorm_no) : null } : {}),
+          },
+        });
+      }
+    }
+
+    if (req.user.role === 'faculty') {
+      const faculty = await prisma.faculty.findUnique({ where: { userId: req.user.id } });
+      if (faculty && mobile !== undefined) {
+        await prisma.faculty.update({
+          where: { userId: req.user.id },
+          data: { mobile: mobile ? String(mobile) : null },
+        });
+      }
+    }
+
+    const updatedUser = await prisma.user.findUnique({
       where: { id: req.user.id },
-      data: { ...(name ? { name } : {}), ...(photo ? { photo } : {}) },
+      include: { student: true, faculty: true },
     });
+
+    let profile = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      photo: updatedUser.photo,
+    };
+    if (updatedUser.role === 'student' && updatedUser.student) {
+      profile = mapStudent(updatedUser, updatedUser.student);
+    } else if (updatedUser.role === 'faculty' && updatedUser.faculty) {
+      profile = mapFaculty(updatedUser, updatedUser.faculty);
+    }
+
+    res.json({ message: 'Profile updated successfully', user: profile });
+  } catch (err) {
+    console.error('updateProfile error:', err);
+    res.status(500).json({ error: err.message || 'Failed to update profile' });
   }
-  if (req.user.role === 'student') {
-    await prisma.student.update({
-      where: { userId: req.user.id },
-      data: {
-        ...(mobile ? { mobile } : {}),
-        ...(parent_phone ? { parentPhone: parent_phone } : {}),
-        ...(dorm_no ? { dormNo: dorm_no } : {}),
-      },
-    });
-  }
-  if (req.user.role === 'faculty' && mobile) {
-    await prisma.faculty.update({ where: { userId: req.user.id }, data: { mobile } });
-  }
-  res.json({ message: 'Profile updated' });
+}
+
+export async function uploadProfilePhoto(req, res) {
+  if (!req.file) return res.status(400).json({ error: 'No image file uploaded' });
+  const photoUrl = `/uploads/${req.file.filename}`;
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { photo: photoUrl },
+  });
+  res.json({ message: 'Photo uploaded successfully', photo: photoUrl });
 }
 
 export async function search(req, res) {

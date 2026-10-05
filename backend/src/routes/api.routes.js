@@ -69,6 +69,7 @@ router.delete('/notifications/:id', auth, role('admin'), ah(campus.deleteNotific
 router.get('/students/list', auth, role('faculty', 'admin'), ah(admin.listStudents));
 router.get('/faculty/list', auth, ah(admin.facultyList));
 router.patch('/profile', auth, ah(admin.updateProfile));
+router.post('/profile/upload-photo', auth, upload.single('photo'), ah(admin.uploadProfilePhoto));
 router.get('/search', auth, ah(admin.search));
 router.get('/dashboard/overview', auth, ah(admin.overview));
 
