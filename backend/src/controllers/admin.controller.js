@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { prisma } from '../config/prisma.js';
-import { getStudentProfile } from '../services/mappers.js';
+import { getStudentProfile, mapStudent, mapFaculty } from '../services/mappers.js';
 import { randomBytes } from 'crypto';
 import { audit } from '../services/audit.js';
 import { publishEvent } from '../services/events.js';
