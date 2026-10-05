@@ -212,16 +212,16 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 4px 13px;
+  padding: 5px 14px;
   border-radius: 999px;
   background: #EEF2FE;
-  border: 1px solid #C7D2FE;
+  border: 1.2px solid #C7D2FE;
   color: #4338CA;
-  font-size: 0.71rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 7px;
 }
 
 [data-theme='dark'] .portal-hero-kicker {
@@ -240,12 +240,14 @@
 
 .portal-hero-title {
   font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(1.68rem, 2.25vw, 2.38rem) !important;
+  font-size: clamp(1.4rem, 2.4vw, 2.45rem) !important;
   font-weight: 800 !important;
   color: #1E1743 !important;
   letter-spacing: -0.035em !important;
-  margin: 0 0 3px !important;
+  margin: 0 0 4px !important;
   line-height: 1.18 !important;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 [data-theme='dark'] .portal-hero-title {
@@ -257,15 +259,15 @@
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
-  display: inline-block !important;
+  display: inline !important;
 }
 
 .portal-hero-subtitle-main {
   font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(0.98rem, 1.15vw, 1.15rem) !important;
+  font-size: clamp(1.02rem, 1.2vw, 1.2rem) !important;
   font-weight: 700 !important;
   color: #1E1743 !important;
-  margin: 0 0 2px !important;
+  margin: 0 0 3px !important;
   line-height: 1.25 !important;
 }
 
@@ -275,7 +277,7 @@
 
 .portal-hero-subtitle-sub {
   font-family: 'DM Sans', sans-serif !important;
-  font-size: clamp(0.8rem, 0.92vw, 0.91rem) !important;
+  font-size: clamp(0.82rem, 0.94vw, 0.93rem) !important;
   font-weight: 400 !important;
   color: #5A5579 !important;
   margin: 0 !important;
@@ -287,16 +289,16 @@
 }
 
 /* --------------------------------------------------------------------------
-   3 PORTAL SELECTION CARDS GRID (Sized to fit perfectly without scrolling)
+   3 PORTAL SELECTION CARDS: Side-by-Side Photo & Features
    -------------------------------------------------------------------------- */
 .portal-selection-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(260px, 345px));
-  gap: clamp(18px, 2.6vw, 38px);
+  grid-template-columns: repeat(3, minmax(290px, 375px));
+  gap: clamp(16px, 2.2vw, 32px);
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
-  max-width: min(1200px, 94vw);
+  max-width: min(1240px, 95vw);
   margin: 0 auto;
   flex-shrink: 1;
   min-height: 0;
@@ -305,7 +307,7 @@
 .portal-card-item {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   animation: portalCardUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -326,20 +328,23 @@
 }
 
 .portal-selection-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   position: relative;
-  width: min(100%, calc((100dvh - 280px) * 0.72));
-  max-width: 345px;
+  width: 100%;
+  max-width: 375px;
   border-radius: 24px;
   text-decoration: none;
   overflow: hidden;
   cursor: pointer;
-  background: #FFFFFF;
+  padding: 16px 16px 14px 16px;
   border: 1.5px solid transparent;
   box-shadow: 0 10px 30px rgba(30, 41, 59, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
               box-shadow 0.28s ease,
               border-color 0.28s ease;
+  user-select: none;
 }
 
 .portal-selection-card:focus-visible {
@@ -347,89 +352,75 @@
   outline-offset: 3px;
 }
 
-/* Role Card Hover & Glow */
-.portal-accent-student {
-  border-color: rgba(110, 185, 255, 0.5);
+/* Student Card Theme */
+.portal-card-student {
+  background: linear-gradient(180deg, #EBF5FF 0%, #DCEEFD 50%, #CFE7FD 100%);
+  border-color: rgba(147, 197, 253, 0.75);
 }
 
-.portal-accent-student:hover {
-  transform: translateY(-6px);
-  border-color: rgba(0, 80, 229, 0.75);
-  box-shadow: 0 20px 48px rgba(0, 80, 229, 0.24), 0 6px 16px rgba(0, 0, 0, 0.04);
+.portal-card-student:hover {
+  transform: translateY(-5px);
+  border-color: rgba(37, 99, 235, 0.8);
+  box-shadow: 0 20px 48px rgba(0, 80, 229, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
-.portal-accent-faculty {
-  border-color: rgba(110, 225, 170, 0.5);
+/* Faculty Card Theme */
+.portal-card-faculty {
+  background: linear-gradient(180deg, #EDFAF2 0%, #DCF4E5 50%, #CCEFD8 100%);
+  border-color: rgba(167, 243, 208, 0.75);
 }
 
-.portal-accent-faculty:hover {
-  transform: translateY(-6px);
-  border-color: rgba(3, 134, 90, 0.75);
-  box-shadow: 0 20px 48px rgba(3, 134, 90, 0.24), 0 6px 16px rgba(0, 0, 0, 0.04);
+.portal-card-faculty:hover {
+  transform: translateY(-5px);
+  border-color: rgba(5, 150, 105, 0.8);
+  box-shadow: 0 20px 48px rgba(3, 134, 90, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
-.portal-accent-admin {
-  border-color: rgba(190, 150, 255, 0.5);
+/* Admin Card Theme */
+.portal-card-admin {
+  background: linear-gradient(180deg, #F5EDFD 0%, #E9DCFC 50%, #DEC9FA 100%);
+  border-color: rgba(221, 214, 254, 0.75);
 }
 
-.portal-accent-admin:hover {
-  transform: translateY(-6px);
-  border-color: rgba(93, 27, 199, 0.75);
-  box-shadow: 0 20px 48px rgba(93, 27, 199, 0.24), 0 6px 16px rgba(0, 0, 0, 0.04);
+.portal-card-admin:hover {
+  transform: translateY(-5px);
+  border-color: rgba(124, 58, 237, 0.8);
+  box-shadow: 0 20px 48px rgba(93, 27, 199, 0.22), 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
-[data-theme='dark'] .portal-selection-card {
-  background: #181432;
-  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.5);
+[data-theme='dark'] .portal-card-student {
+  background: linear-gradient(180deg, #132238 0%, #172A46 50%, #1A3254 100%);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
-.portal-card-visual-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 324 / 450;
-  max-height: calc(100dvh - 280px);
-  border-radius: 24px;
-  overflow: hidden;
-  display: block;
-  container-type: inline-size;
+[data-theme='dark'] .portal-card-faculty {
+  background: linear-gradient(180deg, #102B21 0%, #143529 50%, #184132 100%);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
-.portal-card-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  border-radius: 24px;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+[data-theme='dark'] .portal-card-admin {
+  background: linear-gradient(180deg, #221638 0%, #2B1C47 50%, #342256 100%);
+  border-color: rgba(139, 92, 246, 0.35);
 }
 
-.portal-selection-card:hover .portal-card-img {
-  transform: scale(1.02);
-}
-
-/* Top Badge & Title (Vector SVG & Sharp Typography) */
-.portal-card-header-overlay {
-  position: absolute;
-  top: 5%;
-  left: 0;
-  right: 0;
+/* Card Header */
+.portal-card-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 5;
-  pointer-events: none;
-  text-align: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 12px;
 }
 
 .portal-top-badge {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -440,29 +431,34 @@
 .portal-top-badge-student {
   background: linear-gradient(135deg, #4EA1F7 0%, #156AEB 100%);
   color: #FFFFFF;
-  box-shadow: 0 6px 18px rgba(21, 106, 235, 0.35);
+  box-shadow: 0 6px 16px rgba(21, 106, 235, 0.35);
 }
 
 .portal-top-badge-faculty {
   background: linear-gradient(135deg, #3DD598 0%, #059669 100%);
   color: #FFFFFF;
-  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+  box-shadow: 0 6px 16px rgba(5, 150, 105, 0.35);
 }
 
 .portal-top-badge-admin {
   background: linear-gradient(135deg, #9C7DFA 0%, #6D28D9 100%);
   color: #FFFFFF;
-  box-shadow: 0 6px 18px rgba(109, 40, 217, 0.35);
+  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.35);
+}
+
+.portal-card-header-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
 }
 
 .portal-card-title {
-  margin: 7px 0 0;
-  font-family: 'Outfit', sans-serif !important;
-  font-size: clamp(1.22rem, 1.55vw, 1.45rem) !important;
+  margin: 0;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: clamp(1.18rem, 1.35vw, 1.35rem) !important;
   font-weight: 800 !important;
   letter-spacing: -0.025em !important;
-  line-height: 1.15 !important;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
+  line-height: 1.2 !important;
 }
 
 .portal-card-title-student {
@@ -477,31 +473,89 @@
   color: #260F50 !important;
 }
 
-/* Floating Feature Card with Vector SVG Icons & Crystal-Clear Text */
-.portal-feature-floating-box {
-  position: absolute;
-  top: 29.5%;
-  right: 2.5%;
-  width: 48.5%;
-  height: 47%;
+[data-theme='dark'] .portal-card-title-student {
+  color: #93C5FD !important;
+}
+
+[data-theme='dark'] .portal-card-title-faculty {
+  color: #6EE7B7 !important;
+}
+
+[data-theme='dark'] .portal-card-title-admin {
+  color: #C4B5FD !important;
+}
+
+.portal-card-desc {
+  margin: 3px 0 0;
+  font-family: 'DM Sans', sans-serif !important;
+  font-size: clamp(0.72rem, 0.82vw, 0.78rem) !important;
+  font-weight: 500 !important;
+  color: #4A5568 !important;
+  line-height: 1.28 !important;
+}
+
+[data-theme='dark'] .portal-card-desc {
+  color: #CBD5E1 !important;
+}
+
+/* Card Body: Side-by-Side Photo & Features Box */
+.portal-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 14px;
+  align-items: stretch;
+}
+
+.portal-card-photo-box {
+  width: 100%;
+  min-width: 0;
+  height: 184px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #E2E8F0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.portal-card-photo {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.portal-selection-card:hover .portal-card-photo {
+  transform: scale(1.04);
+}
+
+.portal-card-features-box {
+  width: 100%;
+  min-width: 0;
+  height: 184px;
   background: #FFFFFF;
-  border-radius: 13px;
+  border-radius: 14px;
   border: 1px solid rgba(226, 232, 245, 0.95);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
-  padding: 6px 7px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  padding: 8px 9px;
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
-  z-index: 5;
-  pointer-events: none;
-  overflow: hidden;
   box-sizing: border-box;
+  overflow: hidden;
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
 }
 
-.portal-selection-card:hover .portal-feature-floating-box {
+[data-theme='dark'] .portal-card-features-box {
+  background: #1E1B38;
+  border-color: rgba(124, 92, 255, 0.2);
+}
+
+.portal-selection-card:hover .portal-card-features-box {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1);
 }
 
 .portal-feature-row {
@@ -510,14 +564,13 @@
   gap: 5px;
   width: 100%;
   min-width: 0;
-  min-height: 0;
   box-sizing: border-box;
 }
 
 .portal-feat-icon-box {
-  width: 19px;
-  height: 19px;
-  min-width: 19px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
   border-radius: 5px;
   display: flex;
   align-items: center;
@@ -545,65 +598,90 @@
 
 .portal-feat-text {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: clamp(0.58rem, 3.4cqw, 0.72rem);
+  font-size: clamp(0.67rem, 0.76vw, 0.72rem);
   font-weight: 600;
   color: #1E293B;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
   white-space: nowrap;
-  line-height: 1.15;
+  line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
   flex: 1;
-  -webkit-font-smoothing: antialiased;
+  text-align: left;
 }
 
-/* Interactive Pill Button Overlay at Bottom of Card */
-.portal-btn-overlay {
-  position: absolute;
-  bottom: 12px;
-  left: 14px;
-  right: 14px;
-  height: 44px;
+[data-theme='dark'] .portal-feat-text {
+  color: #E2E8F0;
+}
+
+/* Card Footer: Interactive Button */
+.portal-card-footer {
+  width: 100%;
+}
+
+.portal-interactive-btn {
+  width: 100%;
+  height: 42px;
   border-radius: 999px;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   color: #FFFFFF;
-  font-size: 0.92rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
   font-weight: 700;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.24s ease,
-              filter 0.24s ease;
-  pointer-events: none;
-  z-index: 5;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.22s ease,
+              filter 0.22s ease;
 }
 
-.portal-btn-overlay-student {
+.portal-btn-student {
   background: linear-gradient(90deg, #0050E5 0%, #0145B0 100%);
+  box-shadow: 0 4px 14px rgba(0, 80, 229, 0.3);
 }
 
-.portal-btn-overlay-faculty {
+.portal-btn-faculty {
   background: linear-gradient(90deg, #03865A 0%, #02774D 100%);
+  box-shadow: 0 4px 14px rgba(3, 134, 90, 0.3);
 }
 
-.portal-btn-overlay-admin {
+.portal-btn-admin {
   background: linear-gradient(90deg, #5D1BC7 0%, #4013A1 100%);
+  box-shadow: 0 4px 14px rgba(93, 27, 199, 0.3);
 }
 
-.portal-selection-card:hover .portal-btn-overlay {
+.portal-selection-card:hover .portal-interactive-btn,
+.portal-interactive-btn:hover {
   transform: translateY(-2px);
   filter: brightness(1.08);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.portal-selection-card:hover .portal-btn-student,
+.portal-interactive-btn:hover.portal-btn-student {
+  box-shadow: 0 8px 20px rgba(0, 80, 229, 0.4);
+}
+
+.portal-selection-card:hover .portal-btn-faculty,
+.portal-interactive-btn:hover.portal-btn-faculty {
+  box-shadow: 0 8px 20px rgba(3, 134, 90, 0.4);
+}
+
+.portal-selection-card:hover .portal-btn-admin,
+.portal-interactive-btn:hover.portal-btn-admin {
+  box-shadow: 0 8px 20px rgba(93, 27, 199, 0.4);
 }
 
 .portal-btn-arrow {
   transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.portal-selection-card:hover .portal-btn-arrow {
+.portal-selection-card:hover .portal-btn-arrow,
+.portal-interactive-btn:hover .portal-btn-arrow {
   transform: translateX(4px);
 }
 
@@ -642,21 +720,123 @@
 }
 
 /* Responsive Portal Selection Queries */
-@media (max-width: 820px) {
+@media (max-width: 900px) {
   .portal-select-page.unscrollable-page {
     height: auto !important;
     min-height: 100vh !important;
     max-height: none !important;
     overflow-y: auto !important;
   }
+  .portal-select-nav {
+    padding: 0.75rem 1rem 0.25rem;
+    gap: 8px;
+  }
+  .portal-nav-back {
+    padding: 6px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .portal-hero-banner {
+    padding: 0.4rem 0.5rem 1rem;
+    max-width: 100%;
+  }
+  .portal-hero-title {
+    font-size: clamp(1.3rem, 5.5vw, 1.95rem) !important;
+    line-height: 1.25 !important;
+  }
   .portal-select-main {
     overflow: visible !important;
-    padding: 0.5rem 1rem 2rem;
+    padding: 0.5rem 1rem 2.5rem;
   }
   .portal-selection-grid {
-    grid-template-columns: 1fr;
-    max-width: 340px;
-    gap: 20px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    max-width: 350px !important;
+    width: 100% !important;
+    gap: 20px !important;
+    margin: 0 auto !important;
+  }
+}
+
+@media (max-width: 680px) {
+  .portal-select-nav {
+    padding: 0.65rem 0.75rem 0.2rem;
+  }
+  .portal-nav-brand .logo-text {
+    display: none !important;
+  }
+  .portal-nav-back {
+    padding: 5px 10px;
+  }
+  .portal-nav-back span {
+    font-size: 0.76rem;
+  }
+  .portal-select-main {
+    padding: 0.4rem 0.6rem 2rem;
+  }
+  .portal-hero-banner {
+    padding: 0.2rem 0.25rem 0.75rem;
+  }
+  .portal-hero-kicker {
+    font-size: 0.62rem;
+    padding: 3px 9px;
+    letter-spacing: 0.05em;
+  }
+  .portal-hero-title {
+    font-size: 1.35rem !important;
+    text-wrap: balance;
+  }
+  .portal-hero-subtitle-main {
+    font-size: 0.95rem !important;
+  }
+  .portal-hero-subtitle-sub {
+    font-size: 0.78rem !important;
+  }
+  .portal-selection-grid {
+    max-width: 100% !important;
+    padding: 0;
+    gap: 16px !important;
+  }
+  .portal-selection-card {
+    padding: 12px 10px 10px 10px !important;
+    border-radius: 18px !important;
+  }
+  .portal-card-header {
+    margin-bottom: 9px;
+    gap: 9px;
+  }
+  .portal-top-badge {
+    width: 38px;
+    height: 38px;
+  }
+  .portal-card-title {
+    font-size: 1.15rem !important;
+  }
+  .portal-card-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 8px;
+    margin-bottom: 11px;
+  }
+  .portal-card-photo-box,
+  .portal-card-features-box {
+    height: 162px;
+  }
+  .portal-card-features-box {
+    padding: 6px 7px;
+  }
+  .portal-feat-icon-box {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+  }
+  .portal-feat-text {
+    font-size: 0.68rem;
+  }
+  .portal-interactive-btn {
+    height: 38px;
+    font-size: 0.84rem;
   }
 }
 
@@ -765,7 +945,7 @@
   background: rgba(124, 92, 255, 0.16);
 }
 
-/* Role Badges */
+/* Role Badges matching Portal Themes */
 .role-badge {
   display: inline-flex;
   align-items: center;
@@ -778,40 +958,43 @@
   line-height: 1.2;
 }
 
+.role-badge-student {
+  background: #EFF6FF !important;
+  color: #1D4ED8 !important;
+  border: 1px solid rgba(191, 219, 254, 0.9) !important;
+}
+
 .role-badge-faculty {
-  background: #FFF0ED !important;
-  color: #D9534F !important;
-  border: none !important;
+  background: #ECFDF5 !important;
+  color: #047857 !important;
+  border: 1px solid rgba(167, 243, 208, 0.9) !important;
 }
 
 .role-badge-admin {
-  background: #FFF4EB !important;
-  color: #C05621 !important;
-  border: none !important;
-}
-
-.role-badge-student {
-  background: #EEF0FE !important;
-  color: #4F46E5 !important;
-  border: none !important;
-}
-
-[data-theme='dark'] .role-badge-faculty {
-  background: rgba(217, 83, 79, 0.2) !important;
-  color: #FF8A80 !important;
-}
-
-[data-theme='dark'] .role-badge-admin {
-  background: rgba(192, 86, 33, 0.2) !important;
-  color: #FDE68A !important;
+  background: #F5F3FF !important;
+  color: #6D28D9 !important;
+  border: 1px solid rgba(221, 214, 254, 0.9) !important;
 }
 
 [data-theme='dark'] .role-badge-student {
-  background: rgba(79, 70, 229, 0.2) !important;
-  color: #C7D2FE !important;
+  background: rgba(37, 99, 235, 0.2) !important;
+  color: #93C5FD !important;
+  border-color: rgba(37, 99, 235, 0.4) !important;
 }
 
-/* Role Header: Character Avatar on Left, Title & Subtitle on Right */
+[data-theme='dark'] .role-badge-faculty {
+  background: rgba(5, 150, 105, 0.2) !important;
+  color: #6EE7B7 !important;
+  border-color: rgba(5, 150, 105, 0.4) !important;
+}
+
+[data-theme='dark'] .role-badge-admin {
+  background: rgba(124, 58, 237, 0.2) !important;
+  color: #C4B5FD !important;
+  border-color: rgba(124, 58, 237, 0.4) !important;
+}
+
+/* Role Header: Realistic Photograph Avatar on Left, Title & Subtitle on Right */
 .role-auth-header-row {
   display: flex;
   align-items: center;
@@ -821,29 +1004,45 @@
 }
 
 .role-avatar-wrapper {
-  width: 82px;
-  height: 74px;
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  overflow: hidden;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: avatarFloat 4s ease-in-out infinite;
+  background: #F8FAFC;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.24s ease;
 }
 
-@keyframes avatarFloat {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
+.role-avatar-student {
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.16);
+}
+
+.role-avatar-faculty {
+  border-color: rgba(5, 150, 105, 0.3);
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.16);
+}
+
+.role-avatar-admin {
+  border-color: rgba(124, 58, 237, 0.3);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.16);
+}
+
+.role-avatar-wrapper:hover {
+  transform: scale(1.04);
 }
 
 .role-illustration-avatar {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
+  border-radius: 16px;
 }
 
 .role-auth-header-text {
@@ -1197,8 +1396,9 @@
     font-size: 0.8rem !important;
   }
   .role-avatar-wrapper {
-    width: 66px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
   }
   .role-badge {
     padding: 4px 10px;

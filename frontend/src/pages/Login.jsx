@@ -122,13 +122,17 @@ export default function Login() {
 
           <div className="role-card-divider" />
 
-          {/* Role Header: Character Avatar on Left, Title & Subtitle on Right */}
+          {/* Role Header: Realistic Portal Image on Left, Title & Subtitle on Right */}
           <div className="role-auth-header-row">
-            <div className="role-avatar-wrapper" aria-hidden="true">
+            <div className={`role-avatar-wrapper role-avatar-${role}`} aria-hidden="true">
               <img
                 src={config.avatar}
-                alt={`${config.roleLabel} Illustration`}
+                alt={`${config.roleLabel} Portal`}
                 className="role-illustration-avatar"
+                loading="eager"
+                decoding="async"
+                width={76}
+                height={76}
               />
             </div>
             <div className="role-auth-header-text">
