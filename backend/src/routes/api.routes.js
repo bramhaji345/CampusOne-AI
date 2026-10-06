@@ -11,20 +11,9 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = (process.env.VERCEL || process.env.NODE_ENV === 'production')
-  ? path.join('/tmp', 'uploads')
-  : path.join(__dirname, '../../uploads');
-try {
-  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-} catch (err) {
-  console.warn('Upload directory initialization skipped:', err.message);
-}
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: uploadDir,
-    filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-  }),
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 1 },
 });
 const excelUpload = multer({
   storage: multer.memoryStorage(),

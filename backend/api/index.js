@@ -4,26 +4,28 @@ let initError = null;
 try {
   const mod = await import('../src/app.js');
   app = mod.default;
-  const { ensureExGrades } = await import('../src/config/prisma.js');
-  ensureExGrades().catch(() => {});
 } catch (err) {
   initError = err;
-  console.error('Failed to load CampusOne Express app:', err);
+  console.error('Production backend initialization failed:', {
+    name: err?.name,
+    message: err?.message,
+  });
 }
 
 export default function handler(req, res) {
   if (initError) {
-    return res.status(500).json({
-      error: 'CampusOne Backend Initialization Failed',
-      message: initError.message,
-      stack: initError.stack,
-      envCheck: {
-        hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
-        hasJwtSecret: Boolean(process.env.JWT_SECRET),
-        databaseUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) : null
-      }
+    console.error('Backend handler invoked with initialization error:', {
+      name: initError?.name,
+      message: initError?.message,
+    });
+
+    return res.status(503).json({
+      error: 'Service temporarily unavailable. Please try again shortly.',
+      ...(process.env.NODE_ENV === 'development'
+        ? { devMessage: initError.message }
+        : {}),
     });
   }
+
   return app(req, res);
 }
-

@@ -4,6 +4,7 @@ import { getStudentProfile, mapStudent, mapFaculty } from '../services/mappers.j
 import { randomBytes } from 'crypto';
 import { audit } from '../services/audit.js';
 import { publishEvent } from '../services/events.js';
+import { saveUploadedFile } from '../services/storage.service.js';
 
 function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 
@@ -868,12 +869,12 @@ export async function updateProfile(req, res) {
 
 export async function uploadProfilePhoto(req, res) {
   if (!req.file) return res.status(400).json({ error: 'No image file uploaded' });
-  const photoUrl = `/uploads/${req.file.filename}`;
+  const result = await saveUploadedFile(req.file, { type: 'image', folder: 'profiles' });
   await prisma.user.update({
     where: { id: req.user.id },
-    data: { photo: photoUrl },
+    data: { photo: result.url },
   });
-  res.json({ message: 'Photo uploaded successfully', photo: photoUrl });
+  res.json({ message: 'Photo uploaded successfully', photo: result.url });
 }
 
 export async function search(req, res) {

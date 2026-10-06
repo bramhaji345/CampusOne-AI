@@ -1,3 +1,4 @@
+import './env.js';
 import { PrismaClient } from '../../generated/prisma-v2/index.js';
 
 const globalForPrisma = globalThis;
@@ -43,6 +44,5 @@ export async function ensureExGrades(client = prisma) {
 
 export async function dbHealth() {
   await prisma.$queryRaw`SELECT 1`;
-  ensureExGrades().catch(() => {});
   return true;
 }

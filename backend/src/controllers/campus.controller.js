@@ -13,6 +13,7 @@ import {
   getStudentAcademicLevel,
   isAcademicTermAuthorized,
 } from '../services/academic-auth.js';
+import { saveUploadedFile } from '../services/storage.service.js';
 
 const PRIORITY = { urgent: 1, medical: 2, event: 3, personal: 4, other: 5 };
 
@@ -105,7 +106,11 @@ export async function createAssignment(req, res) {
 
 export async function submitAssignment(req, res) {
   const student = await getStudentProfile(req.user.id);
-  const fileUrl = req.file ? `/uploads/${req.file.filename}` : req.body.file_url || null;
+  let fileUrl = req.body.file_url || null;
+  if (req.file) {
+    const result = await saveUploadedFile(req.file, { type: 'document', folder: 'assignments' });
+    fileUrl = result.url;
+  }
   await prisma.assignmentSubmission.upsert({
     where: { assignmentId_studentId: { assignmentId: req.params.id, studentId: student.student_id } },
     update: { fileUrl, submittedAt: new Date(), status: 'submitted' },

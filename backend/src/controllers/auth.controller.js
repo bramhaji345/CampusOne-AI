@@ -88,8 +88,17 @@ export async function forgotPassword(req, res) {
   if (!email || !isCollegeEmail(email)) {
     return res.status(400).json({ error: 'Please use your college email (@campusone.demo or @campusone.edu)' });
   }
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const genericResponse = {
+    message: 'If an account exists with this email, a password reset link has been dispatched.',
+  };
+
   const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
-  if (!user) return res.status(404).json({ error: 'No account found with this college email' });
+  if (!user) {
+    // Return identical success response to mitigate user enumeration
+    return res.json(genericResponse);
+  }
 
   const token = randomUUID();
   await prisma.passwordReset.create({
@@ -100,11 +109,16 @@ export async function forgotPassword(req, res) {
       expiresAt: new Date(Date.now() + 3600000),
     },
   });
-  res.json({
-    message: 'Password reset link has been sent to your college email.',
-    demoResetLink: `/reset-password?token=${token}`,
-    demoNote: 'In production this is emailed. For demo, use the link below.',
-  });
+
+  if (!isProduction) {
+    return res.json({
+      ...genericResponse,
+      demoResetLink: `/reset-password?token=${token}`,
+      demoNote: 'Development mode only: in production, reset instructions are emailed directly.',
+    });
+  }
+
+  res.json(genericResponse);
 }
 
 export async function resetPassword(req, res) {

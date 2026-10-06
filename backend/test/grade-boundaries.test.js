@@ -83,7 +83,13 @@ test('serializeResult normalizes grades to Ex for marks >= 90%', () => {
   assert.equal(resultMid27.grade, 'Ex');
 });
 
-test('live database verification: no incorrect A grades for marks >= 90', async () => {
+test('live database verification: no incorrect A grades for marks >= 90', async (t) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch (err) {
+    t.skip('Database is not running at 127.0.0.1:5433, skipping live DB assertion');
+    return;
+  }
   const incorrectSemA = await prisma.result.count({
     where: { maxMarks: 100, marks: { gte: 90 }, grade: { in: ['A', 'A+'] } },
   });
